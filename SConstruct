@@ -7,79 +7,64 @@ import os
 import re
 import string
 
+debug = 1
+
+#
 # Determine our platform
+#
+# We use this to pick what assembly to use and for some tests below.
+#
+
 arch = os.uname()[4]
 if arch == 'Power Macintosh': arch = 'ppc'
 if re.compile('i[3456]86').match(arch): arch = 'i386'
 if re.compile('sun.*').match(arch): arch = 'sparc'
-Export('arch')
 os_name = string.replace(string.lower(os.uname()[0]),'-','')
-Export('os_name')
-type = 'st' # mt (multi-threaded) or st (single-threaded)
-debug = 1
+Export('arch os_name')
 
-buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
+#
+# Build a basic environment
+#
+# This is shared between the single-threaded and multi-threaded builds, hence
+# the name "global_env".
+#
 
-env = None
+
+global_env = None
 if os_name == 'osf1':
     # gcc doesn't work with pthreads, so force use of the native tools
-    env = Environment(tools = ['cc','link','ar','as'])
+    global_env = Environment(tools = ['cc','link','ar','as'])
 else:
-    env = Environment()
+    global_env = Environment()
 
-env.Append(
+global_env.Append(
     CPPPATH = [
         '#/src',
         '#/src/' + arch + '-' + os_name
     ],
-    LIBPATH = [
-        '#/' + buildDir,
-    ]
 )
 
-if type == 'mt': # enable threading
-    env.Append(
-        CPPDEFINES = [
-            '_REENTRANT',
-            '_THREAD_SAFE',
-        ]
-    )
-    if os_name == 'freebsd':
-        if True:
-            # use LinuxThreads
-            env.Append(
-                CPPPATH = ['/usr/local/include/pthread/linuxthreads'],
-                LIBPATH = ['/usr/local/lib'],
-                LIBS = ['lthread'],
-            )
-        else:
-            # use built-in user pthreads
-            # DON'T USE ON 4.X.
-            env.Append(
-                CCFLAGS = ['-pthread'],
-                LINKFLAGS = ['-pthread']
-            )
-    elif os_name == 'osf1':
-        env.Append(
-            CCFLAGS = ['-pthread'],
-            LINKFLAGS = ['-pthread']
-        )
-    else:
-        env.Append(LIBS = ['pthread'])
-
-# Misc. other flags
+#
+# Modify it according to our platform
+#
+# There's a mix here of behavior hardcoded for each platform and behavior that
+# is tested for. Stuff generally gets tested for if it is very simple or may
+# change across revisions of the operating system. Otherwise, we can get away
+# with tests by platform name because we have to write assembly for each one
+# anyway.
+#
 
 if os_name == 'osf1':
-    env.Append(CPPDEFINES = [
+    global_env.Append(CPPDEFINES = [
         '_XOPEN_SOURCE=600',     # use socklen_t
         '_OSF_SOURCE',           # ... but publish mcontext_t members anyway
     ])
 
-if env['CC'] == 'gcc':
-    env.Append(CCFLAGS = ['-Wall'])
+if global_env['CC'] == 'gcc':
+    global_env.Append(CCFLAGS = ['-Wall'])
 
 if debug:
-    env.Append(
+    global_env.Append(
         CPPDEFINES=[
             'SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
                                     # safe signal received
@@ -90,7 +75,7 @@ if debug:
         LINKFLAGS=['-g'],
     )
 
-conf = env.Configure()
+conf = global_env.Configure(conf_dir = '.sconf_temp_%s-%s' % (arch, os_name))
 
 if os_name != 'darwin':
     # Darwin poll is emulated through select
@@ -109,8 +94,61 @@ if conf.CheckFunc('epoll_wait'):
 if conf.CheckHeader('stdint.h'):
     conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_STDINT_H'])
 
-env = conf.Finish()
-Export('env')
-BuildDir(buildDir, 'src', 0)
-SConscript(buildDir + '/SConscript')
-SConscript('tests/SConscript')
+global_env = conf.Finish()
+
+#
+# Now build single-threaded and multi-threaded variants.
+#
+# addTargets adds the targets for the given build type with the given
+# environment.
+#
+
+def addTargets(type, base_env):
+    buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
+    env = base_env.Copy()
+    env.Append(LIBPATH = '#/' + buildDir)
+    Export('env')
+
+    SConscript('src/SConscript',
+               build_dir = buildDir,
+               duplicate = 0)
+    SConscript('tests/SConscript',
+               build_dir = buildDir + '/tests/',
+               duplicate = 0)
+
+# Always build a single-threaded version.
+addTargets('st', global_env)
+
+# Build a multi-threaded version if our platform has a thread good library.
+if os_name != 'freebsd' and os_name != 'netbsd':
+    env = global_env.Copy()
+    env.Append(
+        CPPDEFINES = [
+            '_REENTRANT',
+            '_THREAD_SAFE',
+        ]
+    )
+    if os_name == 'freebsd':
+        if True:
+            # use LinuxThreads
+            env.Append(
+                CPPPATH = ['/usr/local/include/pthread/linuxthreads'],
+                LIBPATH = ['/usr/local/lib'],
+                LIBS = ['lthread'],
+            )
+        else:
+            # use built-in pthreads
+            # DON'T USE ON 4.x, as this is a user threading library.
+            # I think 5.x has a real library with the same flag. Haven't tried.
+            env.Append(
+                CCFLAGS = ['-pthread'],
+                LINKFLAGS = ['-pthread']
+            )
+    elif os_name == 'osf1':
+        env.Append(
+            CCFLAGS = ['-pthread'],
+            LINKFLAGS = ['-pthread']
+        )
+    else:
+        env.Append(LIBS = ['pthread'])
+    addTargets('mt', env)
