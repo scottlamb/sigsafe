@@ -1,6 +1,6 @@
 $Id$
 
-The files in this directory test for behavior that I'm not sure about - either
-it's undefined by the standard or I'm afraid that a platform might not
-conform. They are written to be completely self-contained for ease of
-transport and use in bug reports.
+The files in this directory test for behavior that I'm not sure about - it's
+undefined by the standard, the wording is confusing, or I'm afraid that a
+platform might not conform. They are written to be completely self-contained
+for ease of transport and use in bug reports.

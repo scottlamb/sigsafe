@@ -7,8 +7,10 @@ WHAT IS THIS?
 
 sigsafe is a C library for safely, reliably, and promptly handling signals
 delivered to specific threads without significant overhead. This is a common
-and challenging problem, and sigsafe can help. Please see the examples in the
-API documentation.
+and challenging problem, and sigsafe can help. You'll find details in the
+HTML documentation, either here from api/index.html or at:
+
+    <http://www.slamb.org/projects/sigsafe/api/>
 
 sigsafe includes code, documentation, a performance benchmark, and a
 correctness tester that exhaustively searches for race conditions with the
@@ -73,6 +75,84 @@ at the top level. It will produce everything in a build-XXX-YYY-ZZZ directory.
 Run the microbenchmark to see that performance is acceptable and the
 correctness tester to see that sigsafe works (and the other ways don't). Copy
 the library and include file to a suitable location, like /usr/local/bin.
+
+
+HOW DO I TEST IT?
+=================
+
+* If the race checker is working on your platform, you might run it first. A
+  quick run looks like this:
+
+    $ cd tests/race_checker
+    $ ./race_checker -qm
+    ...
+
+      Test                 Result               Expected            
+    ----------------------------------------------------------------
+      sigsafe_read         success              success             
+      racebefore_read      ignored signal       ignored signal      
+      raceafter_read       forgotten result     forgotten result    
+
+  If the the results are different from expected, it will mark the guilty tests
+  with a '*' and note it at the bottom.
+
+  If that passes, you can run a full test with:
+
+    $ ./race_checker -a
+
+  but this will take a long time - you might start it before going to bed.
+
+* If the race condition checker doesn't work, you can play with "simple_test"
+  instead.
+
+     $ ./simple_test
+     <TYPE SOMETHING>
+     read returned: 5
+     buf: asdf
+
+  simple_test just does a read from the terminal and tells you the result.
+  Try entering data or sending it a SIGUSR1. Try editing the source code and
+  uncommenting the "raise" before the system call; it should report EINTR
+  then, too. You can even do something similar to what the race checker does
+  for the instructions right around the system call in the debugger:
+
+    $ gdb ./simple_test
+    ...
+
+    (gdb) break sigsafe_read
+    Breakpoint 1 at 0x8048a24
+
+    (gdb) run
+    ...
+
+    (gdb) disassemble
+    Dump of assembler code for function sigsafe_read:
+    ...
+
+    (gdb) step N (however many times you like)
+    ...
+
+    (gdb) signal SIGUSR1
+    Continuing with signal SIGUSR1.
+    ...
+
+    (gdb) continue
+    ...
+
+* You can check the performance with the system call microbenchmark. It reads
+  a lot of data from the zero device. The important thing is the time relative
+  to the normal system call:
+
+    $ cd tests
+    $ time ./bench_read_raw
+    ...
+    $ time ./bench_read_safe
+    ...
+
+  They will both take about the same amount of kernel time, since they both
+  execute the same syscalls. The safe one will in theory use more user and
+  real time, but hopefully it is not a noticeable difference. Run the tests a
+  few times to make sure you get consistent results.
 
 
 HOW DO I PORT SIGSAFE TO A NEW SYSTEM?

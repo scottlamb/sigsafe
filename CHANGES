@@ -1,0 +1,28 @@
+$Id$
+
+sigsafe-0.1.1
+-------------
+
+* Documentation improvements: a better quick overview, the start of some
+  background text, and a couple other pages that I will bulk out more later.
+  It should be more a little more friendly to different audiences now.
+  (There's still a ways to go.)
+
+* Big improvements to the race condition checker. It now tests for more races
+  (including a couple unsafe patterns I mentioned in the Background text),
+  shows a nice table with actual/expected results, is much faster for a normal
+  run, and lets you specify options at runtime.
+
+* A new directory of tests - platform_behavior. Little experiments I ran on
+  various platforms when the API confused me, where I was looking for bugs,
+  or where behavior can vary from platform to platform. These might or might
+  not be useful beyond when I wrote them, but I might as well stick them
+  somewhere.
+
+* Small build system changes - mostly fixing a bunch of typos/thinkos around
+  the benchmark.
+
+sigsafe-0.1.0
+-------------
+
+* (Initial version)

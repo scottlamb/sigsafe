@@ -1,0 +1,47 @@
+$Id$
+
+sigsafe version 0.1.1 release notes:
+
+* The documentation is improved, but it still has a ways to go:
+
+  - The "Background" section stops abruptly. There are a lot more topics to
+    cover.
+  - The "Pattern reference" could use more explanation and should be adapted
+    to use the same terminology.
+  - The "Goal reference" doesn't really exist yet.
+  - Some other sections don't even have skeletons yet.
+
+  If you spot anything wrong with what's already there, please let me know. If
+  it's unclear to you, odds are it is to someone else, too. And if it seems
+  wrong to you, let me know so I can correct or justify it.
+
+* There are no additional platforms; still only Linux/x86 and Darwin/ppc
+  are supported. I originally this release to support more, but from the
+  feedback I've gotten, the documentation improvements are more important now.
+  The next couple releases will probably also be focused on documentation.
+
+* The race checker is in pretty good shape now on Linux/x86.
+  Try it out with "tests/race_checker/race_checker -qm" for a quick test.
+
+* The race checker still doesn't work under Darwin. It will give
+  results like this:
+
+    $ ./race_checker -qm
+    Running sigsafe_read test
+    attached
+    stepped once
+
+    ERROR: Child was killed/dump from signal 1.
+
+    ...
+
+      Test                 Result               Expected            
+    ----------------------------------------------------------------
+    * sigsafe_read         misc. failure        success             
+    * racebefore_read      misc. failure        ignored signal      
+    * raceafter_read       misc. failure        forgotten result    
+
+    * - These 3 tests did not return the expected result.
+
+  The child isn't exiting from signal 1; the Mach tracing code I'm using just
+  isn't working. As far as I know, sigsafe works fine under Darwin.
