@@ -20,11 +20,13 @@
  */
 
 #if defined(__APPLE_CC__)
-#define PRIVATE(sym) __private_extern__ sym
-#elif defined(__GNUC__) && defined(__DYNAMIC__)
-#define PRIVATE(sym) extern sym __attribute__ ((visibility ("hidden")))
+#define PRIVATE_DEF(sym) __private_extern__ sym
+#define PRIVATE_DEC(sym) __private_extern__ sym
+#elif defined(__GNUC__)
+#define PRIVATE_DEF(sym) extern __attribute__ ((visibility ("internal"))) sym
+#define PRIVATE_DEC(sym) __attribute__ ((visibility ("internal"))) sym
 #else
-#define PRIVATE(sym) extern sym
+#error "Don't know how to make symbols private on your platform."
 #endif
 
 /**
@@ -57,12 +59,12 @@ struct sigsafe_syscall_ {
     const void *jmpto;
 };
 
-PRIVATE(struct sigsafe_syscall_ sigsafe_syscalls_[]);
+PRIVATE_DEF(struct sigsafe_syscall_ sigsafe_syscalls_[]);
 
 #ifdef SIGSAFE_NO_SIGINFO
-PRIVATE(void sigsafe_handler_for_platform_(struct sigcontext *ctx));
+PRIVATE_DEF(void sigsafe_handler_for_platform_(struct sigcontext *ctx));
 #else
-PRIVATE(void sigsafe_handler_for_platform_(ucontext_t *ctx));
+PRIVATE_DEF(void sigsafe_handler_for_platform_(ucontext_t *ctx));
 #endif
 
 #endif /* !SIGSAFE_INTERNAL_H */

@@ -59,13 +59,7 @@ HIDDEN(sigsafe_##name##_jmpto_)                                         ;\
         ret                                                             ;\
 .size sigsafe_##name, . - sigsafe_##name
 
-#ifdef __DYNAMIC__
-#define HIDE(label) .hidden label
-#else
-#define HIDE(label) .global label
-#endif
-
-#define HIDDEN(label) HIDE(label); label:
+#define HIDDEN(label) .internal label; .globl label; label:
 
 /*
  * Since we're using the registers above for system call arguments, we
@@ -162,5 +156,5 @@ HIDDEN(sigsafe_##name##_jmpto_)                                         ;\
         movl    sigsafe_data_,%eax
 #endif
 
-.hidden sigsafe_socketcall
+.internal sigsafe_socketcall
 #include "syscalls.h"
