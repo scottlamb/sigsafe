@@ -8,9 +8,8 @@
  * exhaustively searches for race conditions with the <tt>ptrace(2)</tt>
  * facility.
  *
- * The meat of the library is a set of alternate system call wrappers. Check
- * out the following table, which shows when signals cause system calls to
- * return immediately:
+ * The meat of the library is a set of alternate system call wrappers. The
+ * shows when signals cause system calls to return immediately:
  *
  * <table>
  *   <tr>
