@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <stddef.h>
 #include <setjmp.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -321,6 +322,12 @@ int sigsafe_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
  */
 int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
                     socklen_t addrlen);
+
+/**
+ * Signal-safe <tt>nanosleep(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef ORG_SLAMB_SIGSAFE_INTERNAL
 struct sigsafe_tsd {

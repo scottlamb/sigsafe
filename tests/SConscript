@@ -7,3 +7,13 @@ Import('env')
 env = env.Copy()
 env.Prepend(LIBS = ['sigsafe'])
 env.Program(target = 'simple_test', source = 'simple_test.c')
+
+
+for i in [ #flags        #postfix
+          ([],           'raw'),
+          (['DO_SAFE'],  'safe'),
+          (['DO_SETJMP'],'setjmp'),
+          (['DO_SELECT'],'select')]:
+    my_env = env.Copy()
+    env.Append(CFLAGS = i[0])
+    env.Program(target = 'bench_read_' + i[1], source = 'bench_read.c')
