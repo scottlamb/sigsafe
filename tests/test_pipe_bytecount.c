@@ -40,6 +40,11 @@ enum {
     WRITE
 } PipeHalf;
 
+#ifndef PIPE_BUF
+/* OSF/1 doesn't */
+#define PIPE_BUF _POSIX_PIPE_BUF
+#endif
+
 /* Write a lot of bytes */
 #define BYTES_TO_TRANSFER (PIPE_BUF<<16)/*4294967295u*/
 

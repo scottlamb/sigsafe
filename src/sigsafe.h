@@ -240,10 +240,18 @@ int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef ORG_SLAMB_SIGSAFE_INTERNAL
 
-#if defined(NSIG)
-#define SIGSAFE_NSIG NSIG
+/**
+ * @define SIGMAX
+ * The highest used signal number.
+ * Note that the <tt>NSIG</tt> many platforms has is misnamed - it's not the
+ * number of signals, but the highest number + 1.
+ */
+#if defined(SIGMAX)
+#define SIGSAFE_SIGMAX SIGMAX
+#elif defined(NSIG)
+#define SIGSAFE_SIGMAX (NSIG-1)
 #elif defined(_NSIG)
-#define SIGSAFE_NSIG _NSIG
+#define SIGSAFE_SIGMAX (_NSIG-1)
 #else
 #error Not sure how many signals you have
 #endif
@@ -265,7 +273,7 @@ struct sigsafe_syscall {
 extern struct sigsafe_syscall sigsafe_syscalls[];
 
 extern pthread_key_t sigsafe_key;
-extern sigsafe_user_handler_t user_handlers[SIGSAFE_NSIG];
+extern sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 void sighandler_for_platform(ucontext_t *ctx);
 

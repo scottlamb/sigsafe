@@ -25,6 +25,11 @@
 #include <sigsafe.h>
 #endif
 
+#ifndef PIPE_BUF
+/* OSF/1 doesn't */
+#define PIPE_BUF _POSIX_PIPE_BUF
+#endif
+
 #define BYTES_TO_TRANSFER           4294967295uL
                             /* max: 4294967295uL */
 

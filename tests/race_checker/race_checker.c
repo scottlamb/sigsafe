@@ -426,6 +426,7 @@ enum test_result run_test(const struct test *t) {
                     t->teardown(test_data);
                 return FAILURE;
             }
+            assert(info.si_code == CLD_TRAPPED);
         }
 
         if (info.si_code == CLD_TRAPPED) {

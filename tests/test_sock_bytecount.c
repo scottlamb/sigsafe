@@ -36,6 +36,11 @@ enum {
     WRITE
 } Half;
 
+#ifndef PIPE_BUF
+/* OSF/1 doesn't */
+#define PIPE_BUF _POSIX_PIPE_BUF
+#endif
+
 double rand_uniform() { return (double) random() / (double) RAND_MAX; }
 double rand_exponential(double mean) { return -mean * log(rand_uniform()); }
 

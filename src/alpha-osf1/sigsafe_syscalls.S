@@ -4,10 +4,11 @@
  * This file is part of sigsafe, which is released under the MIT license.
  */
 
-#include <asm/unistd.h>
-#include <asm/errno.h>
+#include <sys/syscall.h>
 #include <alpha/regdef.h>
 #include <alpha/pal.h>
+
+#define EINTR 4 /* from sys/errno.h */
 
 /*
  * Function call convention:
@@ -64,7 +65,7 @@ LABEL(_sigsafe_##name##_minjmp)                                         ;\
         ldl     t0, 0(v0)                                               ;\
         bne     t0, _sigsafe_##name##_jmpto                             ;\
 $sigsafe_##name##_nocompare:                                            ;\
-        lda     v0, __NR_##name(zero)                                   ;\
+        lda     v0, SYS_##name(zero)                                    ;\
 LABEL(_sigsafe_##name##_maxjmp)                                         ;\
         call_pal PAL_callsys                                            ;\
         bne     a3, $sigsafe_##name##_error                             ;\

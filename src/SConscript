@@ -12,9 +12,16 @@ platform_subdir = arch + '-' + os_name
 source = [
     'sigsafe.c',
     platform_subdir + '/sighandler_platform.c',
-    platform_subdir + '/sigsafe_syscalls.S',
     platform_subdir + '/emulated_syscalls.c',
 ]
+
+if os_name == 'osf1':
+    # cc doesn't like assembling for us. Workaround.
+    source.append(env.Command(platform_subdir + '/sigsafe_syscalls.o',
+                platform_subdir + '/sigsafe_syscalls.S',
+                "$AS -I#/src -I#/src/" + platform_subdir + " -o $TARGET $SOURCES"))
+else:
+    source.append(platform_subdir + '/sigsafe_syscalls.S')
 
 env.StaticLibrary(target = 'sigsafe', source = source)
 #env.SharedLibrary(target = 'sigsafe', source = source)

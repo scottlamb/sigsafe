@@ -16,7 +16,7 @@
 
 pthread_key_t sigsafe_key;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
-sigsafe_user_handler_t user_handlers[SIGSAFE_NSIG];
+sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
         extern void *_sigsafe_##name##_minjmp; \
@@ -36,13 +36,13 @@ struct sigsafe_syscall sigsafe_syscalls[] = {
 
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd *tsd = pthread_getspecific(sigsafe_key);
-    assert(0 <= signum && signum < SIGSAFE_NSIG);
+    assert(0 < signum && signum <= SIGSAFE_SIGMAX);
 #ifdef ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL
     write(2, "[S]", 3);
 #endif
     if (tsd != NULL) {
-        if (user_handlers[signum] != NULL) {
-            user_handlers[signum](signum, siginfo, ctx, tsd->user_data);
+        if (user_handlers[signum - 1] != NULL) {
+            user_handlers[signum - 1](signum, siginfo, ctx, tsd->user_data);
         }
         tsd->signal_received = 1;
         sighandler_for_platform(ctx);
@@ -79,9 +79,9 @@ static void sigsafe_init(void) {
 int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     struct sigaction sa;
 
-    assert(0 <= signum && signum < SIGSAFE_NSIG);
+    assert(0 < signum && signum <= SIGSAFE_SIGMAX);
     pthread_once(&sigsafe_once, &sigsafe_init);
-    user_handlers[signum] = handler;
+    user_handlers[signum - 1] = handler;
     sa.sa_sigaction = (void*) &sighandler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
