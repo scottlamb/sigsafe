@@ -2,8 +2,8 @@
 
 ssize_t sigsafe_read(int fd, void *buf, size_t count) {
     struct sigsafe_tsd *tsd;
-    int old_cancellation_type;
-    sigset_t uc_sigmask;
+    volatile int old_cancellation_type;
+    volatile sigset_t uc_sigmask;
 
     /*
      * This is not async cancel-safe; it needs to be done first.
@@ -14,6 +14,7 @@ ssize_t sigsafe_read(int fd, void *buf, size_t count) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &old_cancellation_type);
 
     if (tsd != NULL && signal_jump) {
+
         /*
          * The instruction that checks signal_jump marks the beginning of the
          * signal_jump region.
@@ -27,6 +28,10 @@ ssize_t sigsafe_read(int fd, void *buf, size_t count) {
      * Setup and system call
      * The "sc" instruction marks the end of the signal_jump region.
      */
+    asm ("mtlr 
+         "li r0,3\n\t"  /* read is syscall 3 */
+         "sc\n\t"       /* make the call */
+         "blr\n\t");    /* (failure) branch to LR */
 
 success:
     pthread_setcanceltype(&old_cancellation_type, NULL);

@@ -26,6 +26,12 @@
 #ifndef ORG_SLAMB_SIGSAFE_H
 #define ORG_SLAMB_SIGSAFE_H
 
+#include <signal.h>
+#include <ucontext.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -144,6 +150,13 @@ extern "C" {
  */
 
 /**
+ * User-specified handler type.
+ * @see sigsafe_install_handler
+ * @ingroup sigsafe_control
+ */
+typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
+
+/**
  * Installs a safe signal handler.
  * This installs a safe signal handler. It is <i>global</i> to the process.
  * Note that <i>nothing</i> will happen on signal delivery if the thread in
@@ -168,8 +181,7 @@ extern "C" {
  * Call this function at most once for each signal number.
  * @ingroup sigsafe_control
  */
-int sigsafe_install_handler(int signum,
-        void(*handler)(int,siginfo_t*,ucontext_t*,intptr_t));
+int sigsafe_install_handler(int signum, sigsafe_user_handler_t);
 
 /**
  * Installs thread-specific data.
@@ -254,7 +266,7 @@ int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
  * Modern FreeBSD, NetBSD, OpenBSD, Darwin 7+ (OS X 10.3 Panther)
  */
 int sigsafe_kevent(int kq, int nchanges, struct kevent **changelist,
-                   int nevents, struct kevent **changelist,
+                   int nevents, struct kevent **eventlist,
                    struct timespec *timeout);
 
 /**
@@ -277,8 +289,18 @@ struct sigsafe_tsd {
     void (*destructor)(intptr_t);
 };
 
+struct sigsafe_syscall {
+    const char *name;
+    void *address;
+    ptrdiff_t min_jump_off;
+    ptrdiff_t max_jump_off;
+    ptrdiff_t jump_to_off;
+};
+
+extern struct sigsafe_syscall sigsafe_syscalls[];
+
 extern pthread_key_t sigsafe_key;
-extern void (*user_handlers)(int, siginfo_t*, ucontext_t*, intptr_t)[_NSIGS];
+extern sigsafe_user_handler_t user_handlers[NSIG];
 
 void sighandler_for_platform(ucontext_t *ctx);
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL
