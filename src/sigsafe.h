@@ -29,6 +29,10 @@
 #include <stdint.h> /* for intptr_t */
 #endif
 
+#ifdef SIGSAVE_HAVE_KEVENT
+#include <sys/event.h>
+#endif
+
 #ifdef SIGSAFE_HAVE_EPOLL
 #include <sys/epoll.h>
 #endif
