@@ -43,9 +43,9 @@
  */
 
 #ifdef _THREAD_SAFE
-.comm sigsafe_key,4
+.comm sigsafe_key_,4
 #else
-.comm sigsafe_data,24
+.comm sigsafe_data_,24
 #endif
 
 #define SYSCALL(name, args)                                              \
@@ -57,15 +57,15 @@ sigsafe_##name:                                                         ;\
         beq     v0, $sigsafe_##name##_nocompare                         ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
         ldl     t0, 0(v0)                                               ;\
-        bne     t0, _sigsafe_##name##_jmpto                             ;\
+        bne     t0, sigsafe_##name##_jmpto_                             ;\
 $sigsafe_##name##_nocompare:                                            ;\
         lda     v0, SYS_##name(zero)                                    ;\
-LABEL(_sigsafe_##name##_maxjmp)                                         ;\
+LABEL(sigsafe_##name##_maxjmp_)                                         ;\
         call_pal PAL_callsys                                            ;\
         bne     a3, $sigsafe_##name##_error                             ;\
         lda     sp, 8+8*args(sp)                                        ;\
         ret     zero, (ra), 1                                           ;\
-LABEL(_sigsafe_##name##_jmpto)                                          ;\
+LABEL(sigsafe_##name##_jmpto_)                                          ;\
         lda     v0, EINTR(zero)                                         ;\
 $sigsafe_##name##_error:                                                ;\
         negl    v0                                                      ;\
@@ -124,7 +124,7 @@ $sigsafe_##name##_error:                                                ;\
         lda     sp,-8-8*args(sp)                                        ;\
         SAVERESTORE_REGS_##args(stq)                                    ;\
         .prologue 1                                                     ;\
-        lda     t0, sigsafe_key                                         ;\
+        lda     t0, sigsafe_key_                                        ;\
         ldl     a0, 0(t0)                                               ;\
         jsr     ra,__pthread_getspecific                                ;\
         ldgp    gp,0(ra)                                                ;\
@@ -136,7 +136,7 @@ $sigsafe_##name##_error:                                                ;\
         ldgp    gp,0(pv)                                                ;\
         lda     sp,-8(sp)                                               ;\
         .prologue 1                                                     ;\
-        lda     t0, sigsafe_data                                        ;\
+        lda     t0, sigsafe_data_                                       ;\
         ldl     v0, 0(t0)
 #endif
 

@@ -9,9 +9,9 @@
 #include <asm/errno.h>
 
 #ifdef _THREAD_SAFE
-.comm sigsafe_key,4
+.comm sigsafe_key_,4
 #else
-.comm sigsafe_data,24
+.comm sigsafe_data_,24
 #endif
 
 #ifdef _THREAD_SAFE
@@ -35,7 +35,7 @@ sigsafe_##name:                                                         ;\
         mov ra = b0                                                     ;\
         LOAD_TSD                                                        ;\
         ;;                                                              ;\
-LABEL(_sigsafe_##name##_minjmp)                                         ;\
+LABEL(sigsafe_##name##_minjmp_)                                         ;\
         cmp.ne.unc p6,p7 = 0,ret0                                       ;\
         ;;                                                              ;\
 (p6)    ld4 signaled = [ret0]                                           ;\
@@ -43,16 +43,16 @@ LABEL(_sigsafe_##name##_minjmp)                                         ;\
         ;;                                                              ;\
 (p6)    cmp.eq.unc p6,p7 = 0,signaled                                   ;\
         ;;                                                              ;\
-LABEL(_sigsafe_##name##_maxjmp)                                         ;\
+LABEL(sigsafe_##name##_maxjmp_)                                         ;\
 (p6)    break.i __BREAK_SYSCALL                                         ;\
-(p7)    br.cond.spnt.few _sigsafe_##name##_jmpto#                       ;\
+(p7)    br.cond.spnt.few sigsafe_##name##_jmpto_#                       ;\
         ;;                                                              ;\
         cmp.eq.unc p6,p0 = -1,r10           /* if error ... */          ;\
         ;;                                                              ;\
 (p6)    sub ret0 = 0,ret0                   /* ... return -errno */     ;\
         br.ret.sptk.few rp                                              ;\
         ;;                                                              ;\
-LABEL(_sigsafe_##name##_jmpto)                                          ;\
+LABEL(sigsafe_##name##_jmpto_)                                          ;\
         mov ret0 = -EINTR                                               ;\
         br.ret.sptk.few rp                                              ;\
 .endp sigsafe_##name
@@ -67,14 +67,14 @@ label:
  */
 #ifdef _THREAD_SAFE
 #define LOAD_TSD \
-        addl o0 = @ltoff(sigsafe_key#), gp                              ;\
+        addl o0 = @ltoff(sigsafe_key_#), gp                             ;\
         ;;                                                              ;\
         ld4 o0 = [o0]                                                   ;\
         ;;                                                              ;\
         br.call.sptk.few b0 = pthread_getspecific#
 #else
 #define LOAD_TSD \
-        addl ret0 = @ltoff(sigsafe_data#), gp
+        addl ret0 = @ltoff(sigsafe_data_#), gp
 #endif
 
 #include "syscalls.h"

@@ -7,8 +7,7 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #ifdef _THREAD_SAFE
 #include <pthread.h>
 #endif
@@ -16,42 +15,30 @@
 #include <stdlib.h>
 #include <errno.h>
 
-/*
- * See Ulrich Drepper's "How to Write Shared Libraries"
- * <http://www.ukuug.org/events/linux2002/papers/pdf/dsohowto.pdf>
- * for a description of __attribute__ ((visibility ("hidden")))
- * and other good things to know about ELF relocation, symbol versioning, etc.
- */
-
-#ifdef __GNUC__
-#define PRIVATE __attribute__ ((visibility ("hidden")))
-#else
-#define PRIVATE
-#endif
-
 #ifdef _THREAD_SAFE
-pthread_key_t sigsafe_key PRIVATE;
+pthread_key_t sigsafe_key_ PRIVATE;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 #else
-struct sigsafe_tsd *sigsafe_data PRIVATE;
+struct sigsafe_tsd_ *sigsafe_data_ PRIVATE;
 static int sigsafe_inited;
 #endif
 
 static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
-        extern void *_sigsafe_##name##_minjmp; \
-        extern void *_sigsafe_##name##_maxjmp; \
-        extern void *_sigsafe_##name##_jmpto;
+        extern const void *sigsafe_##name##_minjmp_(void) PRIVATE; \
+        extern const void *sigsafe_##name##_maxjmp_(void) PRIVATE; \
+        extern const void *sigsafe_##name##_jmpto_ (void) PRIVATE;
 #include "syscalls.h"
 #undef SYSCALL
 
 #define SYSCALL(name, args) \
-        { #name, &sigsafe_##name, &_sigsafe_##name##_minjmp, \
-          &_sigsafe_##name##_maxjmp, &_sigsafe_##name##_jmpto },
-struct sigsafe_syscall sigsafe_syscalls[] = {
+        { sigsafe_##name##_minjmp_, \
+          sigsafe_##name##_maxjmp_, \
+          sigsafe_##name##_jmpto_ },
+struct sigsafe_syscall_ sigsafe_syscalls_[] = {
 #include "syscalls.h"
-    { NULL, NULL, NULL, NULL, NULL }
+    { NULL, NULL, NULL }
 };
 #undef SYSCALL
 
@@ -61,37 +48,37 @@ static void sighandler(int signum, int code, struct siginfo *ctx) {
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 #endif
 #ifdef _THREAD_SAFE
-    struct sigsafe_tsd *sigsafe_data = pthread_getspecific(sigsafe_key);
+    struct sigsafe_tsd_ *sigsafe_data_ = pthread_getspecific(sigsafe_key_);
 #endif
     assert(0 < signum && signum <= SIGSAFE_SIGMAX);
 #ifdef ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL
     write(2, "[S]", 3);
 #endif
-    if (sigsafe_data != NULL) {
+    if (sigsafe_data_ != NULL) {
         if (user_handlers[signum - 1] != NULL) {
 #ifdef SIGSAFE_NO_SIGINFO
             user_handlers[signum - 1](signum, code, ctx,
-                                      sigsafe_data->user_data);
+                                      sigsafe_data_->user_data);
 #else
             user_handlers[signum - 1](signum, siginfo, ctx,
-                                      sigsafe_data->user_data);
+                                      sigsafe_data_->user_data);
 #endif
         }
-        sigsafe_data->signal_received = 1;
-        sighandler_for_platform(ctx);
+        sigsafe_data_->signal_received = 1;
+        sigsafe_handler_for_platform_(ctx);
     }
 }
 
 #ifdef _THREAD_SAFE
 static void tsd_destructor(void* tsd_v) {
-    struct sigsafe_tsd *sigsafe_data = (struct sigsafe_tsd*) tsd_v;
+    struct sigsafe_tsd_ *sigsafe_data_ = (struct sigsafe_tsd_*) tsd_v;
 #else
 static void tsd_destructor(void) {
 #endif
-    if (sigsafe_data->destructor != NULL) {
-        sigsafe_data->destructor(sigsafe_data->user_data);
+    if (sigsafe_data_->destructor != NULL) {
+        sigsafe_data_->destructor(sigsafe_data_->user_data);
     }
-    free(sigsafe_data);
+    free(sigsafe_data_);
 }
 
 static void sigsafe_init(void) {
@@ -99,7 +86,7 @@ static void sigsafe_init(void) {
     volatile void *fp;
 
 #ifdef _THREAD_SAFE
-    pthread_key_create(&sigsafe_key, &tsd_destructor);
+    pthread_key_create(&sigsafe_key_, &tsd_destructor);
 #else
     atexit(&tsd_destructor);
 #endif
@@ -115,7 +102,7 @@ static void sigsafe_init(void) {
 #ifdef _THREAD_SAFE
     fp = &pthread_getspecific;
 #endif
-    fp = &sighandler_for_platform;
+    fp = &sigsafe_handler_for_platform_;
     fp = &write;
 }
 
@@ -153,27 +140,27 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
 
 int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
 #ifdef _THREAD_SAFE
-    struct sigsafe_tsd *sigsafe_data = NULL;
+    struct sigsafe_tsd_ *sigsafe_data_ = NULL;
     int retval;
 
-    assert(pthread_getspecific(sigsafe_key) == NULL);
+    assert(pthread_getspecific(sigsafe_key_) == NULL);
 #else
-    assert(sigsafe_data == NULL);
+    assert(sigsafe_data_ == NULL);
 #endif
 
-    sigsafe_data = (struct sigsafe_tsd*) malloc(sizeof(struct sigsafe_tsd));
-    if (sigsafe_data == NULL) {
+    sigsafe_data_ = (struct sigsafe_tsd_*) malloc(sizeof(struct sigsafe_tsd_));
+    if (sigsafe_data_ == NULL) {
         return -ENOMEM;
     }
 
-    sigsafe_data->signal_received = 0;
-    sigsafe_data->user_data = user_data;
-    sigsafe_data->destructor = destructor;
+    sigsafe_data_->signal_received = 0;
+    sigsafe_data_->user_data = user_data;
+    sigsafe_data_->destructor = destructor;
 
 #ifdef _THREAD_SAFE
-    retval = pthread_setspecific(sigsafe_key, sigsafe_data);
+    retval = pthread_setspecific(sigsafe_key_, sigsafe_data_);
     if (retval != 0) {
-        free(sigsafe_data);
+        free(sigsafe_data_);
         return -retval;
     }
 #endif
@@ -183,11 +170,11 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
 
 intptr_t sigsafe_clear_received(void) {
 #ifdef _THREAD_SAFE
-    struct sigsafe_tsd *sigsafe_data;
+    struct sigsafe_tsd_ *sigsafe_data_;
 
-    sigsafe_data = (struct sigsafe_tsd*) pthread_getspecific(sigsafe_key);
+    sigsafe_data_ = (struct sigsafe_tsd_*) pthread_getspecific(sigsafe_key_);
 #endif
-    assert(sigsafe_data != NULL);
-    sigsafe_data->signal_received = 0;
-    return sigsafe_data->user_data;
+    assert(sigsafe_data_ != NULL);
+    sigsafe_data_->signal_received = 0;
+    return sigsafe_data_->user_data;
 }

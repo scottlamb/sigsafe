@@ -17,3 +17,6 @@ SYSCALL(poll, 3)
 SYSCALL(wait4, 4)
 SYSCALL(accept, 3)
 SYSCALL(connect, 3)
+#ifdef SIGSAFE_HAVE_KEVENT
+SYSCALL(kevent, 6)
+#endif

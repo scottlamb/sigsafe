@@ -14,7 +14,7 @@ SYSCALL(write, 3)
 SYSCALL(writev, 3)
 SYSCALL(select, 5)
 SYSCALL(poll, 3)
-#ifdef HAVE_EPOLL
+#ifdef SIGSAFE_HAVE_EPOLL
 SYSCALL(epoll_wait, 4)
 #endif
 SYSCALL(wait4, 4)

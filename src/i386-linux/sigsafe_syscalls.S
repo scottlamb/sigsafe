@@ -34,9 +34,9 @@
  */
 
 #ifdef _THREAD_SAFE
-.comm sigsafe_key,4
+.comm sigsafe_key_,4
 #else
-.comm sigsafe_data,12
+.comm sigsafe_data_,12
 #endif
 
 #define SYSCALL(name, args)                                             ;\
@@ -49,16 +49,16 @@ LABEL(sigsafe_##name)                                                   ;\
         SETUP_ARGS_##args                                               ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-LABEL(_sigsafe_##name##_minjmp)                                         ;\
+LABEL(sigsafe_##name##_minjmp_)                                         ;\
         cmp     $0,(%eax)                                               ;\
-        jne     _sigsafe_##name##_jmpto                                 ;\
+        jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movl    $__NR_##name,%eax                                       ;\
-LABEL(_sigsafe_##name##_maxjmp)                                         ;\
+LABEL(sigsafe_##name##_maxjmp_)                                         ;\
         int     $0x80                                                   ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\
-LABEL(_sigsafe_##name##_jmpto)                                          ;\
+LABEL(sigsafe_##name##_jmpto_)                                          ;\
         movl    $-EINTR,%eax                                            ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\
@@ -155,12 +155,12 @@ label:
 
 #ifdef _THREAD_SAFE
 #define LOAD_TSD \
-        pushl   sigsafe_key                                             ;\
+        pushl   sigsafe_key_                                            ;\
         call    pthread_getspecific                                     ;\
         pop     %ecx /* not used */
 #else
 #define LOAD_TSD \
-        movl    sigsafe_data,%eax
+        movl    sigsafe_data_,%eax
 #endif
 
 #include "syscalls.h"

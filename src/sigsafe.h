@@ -7,8 +7,8 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#ifndef ORG_SLAMB_SIGSAFE_H
-#define ORG_SLAMB_SIGSAFE_H
+#ifndef SIGSAFE_H
+#define SIGSAFE_H
 
 #ifdef __NetBSD__
 #define SIGSAFE_NO_SIGINFO
@@ -28,17 +28,14 @@
 #include <stdint.h> /* for intptr_t */
 #endif
 
-#ifdef HAVE_EPOLL
-/*
- * RedHat 9's epoll header needs stdint.h but doesn't include it itself.
- */
-#include <stdint.h>
+#ifdef SIGSAFE_HAVE_EPOLL
 #include <sys/epoll.h>
 #endif
 
-#ifdef HAVE_POLL
+#ifdef SIGSAFE_HAVE_POLL
 #include <sys/poll.h>
 #endif
+
 #include <unistd.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -51,11 +48,11 @@ extern "C" {
 /**
  * @defgroup sigsafe_control Signal control functions
  */
+/*@{*/
 
 /**
  * User-specified handler type.
  * @see sigsafe_install_handler
- * @ingroup sigsafe_control
  */
 #ifdef SIGSAFE_NO_SIGINFO
 typedef void (*sigsafe_user_handler_t)(int, int, struct siginfo*, intptr_t);
@@ -82,7 +79,6 @@ typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
  *         return -1 and set errno to <tt>EINVAL</tt>.
  * @note
  * Call this function at most once for each signal number.
- * @ingroup sigsafe_control
  */
 int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler);
 
@@ -96,7 +92,6 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler);
  *                   handler routine with every signal.
  * @param destructor An optional destructor for userdata, to be run at thread
  *                   exit.
- * @ingroup sigsafe_control
  */
 int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
 
@@ -118,9 +113,10 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * that some signal delivery mechanisms --- like child process events and
  * interval timers --- simply do not deliver signals if all eligible threads
  * have them masked.)
- * @ingroup sigsafe_control
  */
 intptr_t sigsafe_clear_received(void);
+
+/*@}*/
 
 /**
  * @defgroup sigsafe_syscalls Signal-safe system call wrappers
@@ -159,38 +155,29 @@ intptr_t sigsafe_clear_received(void);
  * If you do not see the system call you want here, don't panic. It's very
  * easy to add new system calls in most cases.
  */
+/*@{*/
 
-/**
- * Signal-safe <tt>read(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>read(2)</tt>. */
 int sigsafe_read(int fd, void *buf, size_t count);
 
-/**
- * Signal-safe <tt>readv(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>readv(2)</tt>. */
 int sigsafe_readv(int d, const struct iovec *iov, int iovcnt);
 
-/**
- * Signal-safe <tt>write(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>write(2)</tt>. */
 int sigsafe_write(int fd, const void *buf, size_t count);
 
-/**
- * Signal-safe <tt>writev(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>writev(2)</tt>. */
 int sigsafe_writev(int d, const struct iovec *iov, int iovcnt);
 
 /**
  * Signal-safe <tt>epoll_wait(2)</tt>.
  * @par Availability:
- * Linux 2.6+ systems
- * @ingroup sigsafe_syscalls
+ * Linux 2.6+ systems, possibly backported to some Linux 2.4 systems.
+ * This function will exist if <tt>epoll_wait(2)</tt> was in the system
+ * headers when sigsafe was compiled. However, it will return <tt>-ENOSYS</tt>
+ * unless it exists in the currently-running kernel.
  */
-#if defined(HAVE_EPOLL) || defined(DOXYGEN)
+#if defined(SIGSAFE_HAVE_EPOLL) || defined(DOXYGEN)
 int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
                        int timeout);
 #endif
@@ -204,7 +191,7 @@ int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
  * @par Availability:
  * Modern FreeBSD, NetBSD, OpenBSD, Darwin 7+ (OS X 10.3 Panther)
  */
-#if defined(HAVE_KEVENT) || defined(DOXYGEN)
+#if defined(SIGSAFE_HAVE_KEVENT) || defined(DOXYGEN)
 int sigsafe_kevent(int kq, int nchanges, struct kevent **changelist,
                    int nevents, struct kevent **eventlist,
                    struct timespec *timeout);
@@ -212,23 +199,28 @@ int sigsafe_kevent(int kq, int nchanges, struct kevent **changelist,
 
 /**
  * Signal-safe <tt>select(2)</tt>.
- * @ingroup sigsafe_syscalls
+ * @par Availability:
+ * All supported systems except Solaris.
+ * (The <tt>select(2)</tt> system call on Solaris is emulated with
+ * <tt>poll(2)</tt>.)
  */
+#if defined(SIGSAFE_HAVE_SELECT) || defined(DOXYGEN)
 int sigsafe_select(int nfds, fd_set *readfds, fd_set *writefds,
                    fd_set *errorfds, struct timeval *timeout);
-
-/**
- * Signal-safe <tt>poll(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
-#if defined(HAVE_POLL) || defined(DOXYGEN)
-int sigsafe_poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 #endif
 
 /**
- * Signal-safe <tt>wait4(2)</tt>.
- * @ingroup sigsafe_syscalls
+ * Signal-safe <tt>poll(2)</tt>.
+ * @par Availability:
+ * All supported systems except Darwin/OS X.
+ * (The <tt>poll(2)</tt> system call on Drawin is emulated with
+ * <tt>select(2)</tt>.)
  */
+#if defined(SIGSAFE_HAVE_POLL) || defined(DOXYGEN)
+int sigsafe_poll(struct pollfd *ufds, unsigned int nfds, int timeout);
+#endif
+
+/** Signal-safe <tt>wait4(2)</tt>. */
 int sigsafe_wait4(pid_t wpid, int *status, int options, struct rusage *rusage);
 
 /**
@@ -237,66 +229,16 @@ int sigsafe_wait4(pid_t wpid, int *status, int options, struct rusage *rusage);
  */
 int sigsafe_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
 
-/**
- * Signal-safe <tt>connect(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>connect(2)</tt>. */
 int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
                     socklen_t addrlen);
 
-/**
- * Signal-safe <tt>nanosleep(2)</tt>.
- * @ingroup sigsafe_syscalls
- */
+/** Signal-safe <tt>nanosleep(2)</tt>. */
 int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
-#ifdef ORG_SLAMB_SIGSAFE_INTERNAL
-
-/**
- * @define SIGMAX
- * The highest used signal number.
- * Note that the <tt>NSIG</tt> many platforms has is misnamed - it's not the
- * number of signals, but the highest number + 1.
- */
-#if defined(SIGMAX)
-#define SIGSAFE_SIGMAX SIGMAX
-#elif defined(NSIG)
-#define SIGSAFE_SIGMAX (NSIG-1)
-#elif defined(_NSIG)
-#define SIGSAFE_SIGMAX (_NSIG-1)
-#else
-#error Not sure how many signals you have
-#endif
-
-struct sigsafe_tsd {
-    volatile sig_atomic_t signal_received;
-    intptr_t user_data;
-    void (*destructor)(intptr_t);
-};
-
-struct sigsafe_syscall {
-    const char *name;
-    void *address;
-    void *minjmp;
-    void *maxjmp;
-    void *jmpto;
-};
-
-extern struct sigsafe_syscall sigsafe_syscalls[];
-
-extern sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
-
-#ifdef SIGSAFE_NO_SIGINFO
-void sighandler_for_platform(struct sigcontext *ctx);
-#else
-void sighandler_for_platform(ucontext_t *ctx);
-#endif
-
-/* socketcall is on Linux; it can't hurt elsewhere to declare it here */
-int sigsafe_socketcall(int call, unsigned long *args);
-#endif // ORG_SLAMB_SIGSAFE_INTERNAL
+/*@}*/
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-#endif /* !ORG_SLAMB_SIGSAFE_H */
+#endif /* !SIGSAFE_H */

@@ -11,12 +11,12 @@
 #define EINTR 4 /* from /usr/include/sys/errno.h */
 
 #ifdef _THREAD_SAFE
-.reference _sigsafe_key
-NON_LAZY_STUB(_sigsafe_key)
+.reference _sigsafe_key_
+NON_LAZY_STUB(_sigsafe_key_)
 NON_LAZY_STUB(_pthread_getspecific)
 #else
-.reference _sigsafe_data
-NON_LAZY_STUB(_sigsafe_data)
+.reference _sigsafe_data_
+NON_LAZY_STUB(_sigsafe_data_)
 #endif
 
 #define SYSCALL(name,args)                                                   \
@@ -24,30 +24,30 @@ NESTED(_sigsafe_##name, 0, 1, 0, 0)                                         @\
         LOAD_TSD(args)                                                      @\
         li      r0,SYS_##name                                               @\
         cmpwi   r10,0                        /* check TSD pointer */        @\
-        beq     __sigsafe_##name##_maxjmp                                   @\
-LABEL(__sigsafe_##name##_minjmp)                                            @\
+        beq     _sigsafe_##name##_maxjmp_                                   @\
+LABEL(_sigsafe_##name##_minjmp_)                                            @\
         lwz     r10,0(r10)                   /* check TSD value */          @\
         cmpwi   r10,0                                                       @\
-        bne     __sigsafe_##name##_jmpto                                    @\
-LABEL(__sigsafe_##name##_maxjmp)                                            @\
+        bne     _sigsafe_##name##_jmpto_                                    @\
+LABEL(_sigsafe_##name##_maxjmp_)                                            @\
         sc                                                                  @\
         neg     r3,r3                        /* executed only on error */   @\
         RETURN                                                              @\
-LABEL(__sigsafe_##name##_jmpto)                                             @\
+LABEL(_sigsafe_##name##_jmpto_)                                             @\
         li      r3,-EINTR                                                   @\
         RETURN
 
 #ifdef _THREAD_SAFE
 #define LOAD_TSD(args)                                                       \
         SAVERESTORE_ARGS_##args(stw)                                        @\
-        PICIFY(_sigsafe_key)                 /* retrieve TSD */             @\
+        PICIFY(_sigsafe_key_)                /* retrieve TSD */             @\
         lwz     r3,0(PICIFY_REG)                                            @\
         CALL_EXTERN_AGAIN(_pthread_getspecific)                             @\
         mr      r10,r3                                                      @\
         SAVERESTORE_ARGS_##args(lwz)
 #else
 #define LOAD_TSD(args)                                                       \
-        PICIFY(_sigsafe_data)                                               @\
+        PICIFY(_sigsafe_data_)                                              @\
         lwz     r10,0(PICIFY_REG)
 #endif
 

@@ -81,10 +81,10 @@ if env['CC'] == 'gcc':
 if debug:
     env.Append(
         CPPDEFINES=[
-            'ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
-                                              # safe signal received
-            'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [J] to stderr whenever
-                                              # jumping from sighandler
+            'SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
+                                    # safe signal received
+            'SIGSAFE_DEBUG_JUMP',   # write [J] to stderr whenever
+                                    # jumping from sighandler
         ],
         CCFLAGS=['-g'],
         LINKFLAGS=['-g'],
@@ -94,17 +94,17 @@ conf = env.Configure()
 
 if os_name != 'darwin':
     # Darwin poll is emulated through select
-    conf.env.Append(CPPDEFINES = ['HAVE_POLL'])
+    conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_POLL'])
 
 if os_name != 'sunos':
     # Solaris select is emulated through poll
     conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_SELECT'])
 
 if conf.CheckFunc('kevent'):
-    conf.env.Append(CPPDEFINES = ['HAVE_KEVENT'])
+    conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_KEVENT'])
 
 if conf.CheckFunc('epoll_wait'):
-    conf.env.Append(CPPDEFINES = ['HAVE_EPOLL'])
+    conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_EPOLL'])
 
 if conf.CheckHeader('stdint.h'):
     conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_STDINT_H'])

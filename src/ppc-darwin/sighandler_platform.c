@@ -7,21 +7,20 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #include <ucontext.h>
 #include <unistd.h>
 
-void sighandler_for_platform(ucontext_t *ctx) {
-    struct sigsafe_syscall *s;
+void sigsafe_handler_for_platform_(ucontext_t *ctx) {
+    struct sigsafe_syscall_ *s;
     void *srr0;
     srr0 = (void*) ctx->uc_mcontext->ss.srr0;
-    for (s = sigsafe_syscalls; s->address != NULL; s++) {
+    for (s = sigsafe_syscalls_; s->minjmp != NULL; s++) {
         if (s->minjmp <= srr0 && srr0 <= s->maxjmp) {
-#ifdef ORG_SLAMB_SIGSAFE_DEBUG_JUMP
+#ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);
 #endif
-            ctx->uc_mcontext->ss.srr0 = (int) s->jmpto;
+            ctx->uc_mcontext->ss.srr0 = (long) s->jmpto;
             return;
         }
     }

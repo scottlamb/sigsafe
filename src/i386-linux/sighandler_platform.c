@@ -8,18 +8,17 @@
  */
 
 #define _GNU_SOURCE /* Necessary for REG_EIP. Why, I don't know. */
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #include <ucontext.h>
 #include <unistd.h>
 
 void sighandler_for_platform(ucontext_t *ctx) {
-    struct sigsafe_syscall *s;
+    struct sigsafe_syscall_ *s;
     void *eip;
     eip = (void*) ctx->uc_mcontext.gregs[REG_EIP];
-    for (s = sigsafe_syscalls; s->address != NULL; s++) {
+    for (s = sigsafe_syscalls_; s->minjmp != NULL; s++) {
         if (s->minjmp <= eip && eip <= s->maxjmp) {
-#ifdef ORG_SLAMB_SIGSAFE_DEBUG_JUMP
+#ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);
 #endif
             ctx->uc_mcontext.gregs[REG_EIP] = (int) s->jmpto;
