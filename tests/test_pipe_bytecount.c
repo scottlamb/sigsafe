@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <sigsafe.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -75,7 +76,10 @@ int main(void) {
     if (fork() == 0) { /* signaler */
         while (1) {
             /*usleep(50);*/
-            kill(parent_pid, SIGUSR1);
+            if (kill(parent_pid, SIGUSR1) < 0) {
+                printf("Signaler ending.\n");
+                exit(0);
+            }
         }
         /* not reached */
     }

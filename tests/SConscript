@@ -10,7 +10,9 @@ Import('env')
 env = env.Copy()
 env.Prepend(LIBS = ['sigsafe'])
 
-for i in ('simple_test', 'test_pipe_bytecount'):
+for i in ['simple_test',
+          'test_pipe_bytecount',
+          'test_sock_bytecount']:
     env.Program(target = i, source = i + '.c')
 
 for i in [ #flags        #postfix

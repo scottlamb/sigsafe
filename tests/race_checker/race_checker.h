@@ -15,9 +15,9 @@
 #include <setjmp.h>         /* for sigsetjmp */
 
 enum error_return_type {
-    DIRECT,
-    NEGATIVE,
-    ERRNO
+    DIRECT,         /**< pthread functions */
+    NEGATIVE,       /**< sigsafe functions */
+    ERRNO           /**< old-school functions */
 };
 
 int error_wrap(int, const char*, enum error_return_type);
