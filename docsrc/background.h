@@ -270,7 +270,7 @@
  * sa.sa_flags = SA_RESTART;
  * sigfillset(&sa.sa_mask);
  * sigaction(SIGUSR1, &sa, NULL);
- * @encode
+ * @endcode
  *
  * We can then just add <tt>signalPipe[READ]</tt> to the list of descriptors
  * to wait for. When we read data from it, we know that a signal has arrived.
