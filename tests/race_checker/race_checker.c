@@ -98,9 +98,10 @@ struct test {
     enum test_result result;
     enum test_result expected;
 } tests[] = {
-    { "safe_read",      &create_pipe,       &install_safe,      &do_safe_read,      &nudge_read,    &cleanup_pipe, NOT_RUN, SUCCESS },
-    { "unsafe_read",    &create_pipe,       &install_unsafe,    &do_unsafe_read,    &nudge_read,    &cleanup_pipe, NOT_RUN, FAILURE},
-    { NULL,             NULL,               NULL,               NULL,               NULL,           NULL, NOT_RUN, NOT_RUN }
+    { "sigsafe_read",   &create_pipe,       &install_safe,      &do_sigsafe_read,   &nudge_read,    &cleanup_pipe, NOT_RUN, SUCCESS },
+    { "racebefore_read",&create_pipe,       &install_unsafe,    &do_racebefore_read,&nudge_read,    &cleanup_pipe, NOT_RUN, FAILURE },
+    { "raceafter_read", &create_pipe,       &install_unsafe,    &do_raceafter_read, &nudge_read,    &cleanup_pipe, NOT_RUN, FAILURE },
+    { NULL,             NULL,               NULL,               NULL,               NULL,           NULL,          NOT_RUN, NOT_RUN }
 };
 
 /**
@@ -144,7 +145,7 @@ enum test_result run_test(const struct test *t) {
      * handlers? I just assume for now that nothing exciting will happen after
      * 500 instructions so I don't have to wait forever.
      */
-    int num_steps_before_continue = 500/*-1*/,
+    int num_steps_before_continue = 1000/*-1*/,
         num_steps_so_far;
     int nudge_step = -1;
     int status;
@@ -173,7 +174,7 @@ enum test_result run_test(const struct test *t) {
         if (num_steps_before_continue == -1) {
             printf("Stepping until exit\n");
         } else {
-            printf("Stepping %d instructions\n", num_steps_before_continue);
+            printf("Stepping %d instructions and continuing\n", num_steps_before_continue);
         }
         for (num_steps_so_far = 0;
                 num_steps_before_continue == -1
@@ -228,7 +229,6 @@ enum test_result run_test(const struct test *t) {
         }
 
         if (statuscode == CLD_TRAPPED) {
-            printf("Continuing until exit\n");
             statuscode = -1;
             trace_detach(childpid, SIGUSR1);
             sigsetjmp(env, 1);
@@ -258,9 +258,9 @@ enum test_result run_test(const struct test *t) {
                     t->teardown(test_data);
                     return FAILURE;
                 } else if (WEXITSTATUS(status) == INTERRUPTED) {
-                    printf("Good; interrupted\n");
+                    /*printf("Good; interrupted\n");*/
                 } else if (WEXITSTATUS(status) == NORMAL) {
-                    printf("Good; normal\n");
+                    /*printf("Good; normal\n");*/
                 } else {
                     abort();
                 }
@@ -272,7 +272,6 @@ enum test_result run_test(const struct test *t) {
         }
         num_steps_before_continue = num_steps_so_far - 1;
         t->teardown(test_data);
-        printf("\n");
     } while (num_steps_before_continue >= 0) ;
     return SUCCESS;
 }

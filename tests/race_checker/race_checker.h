@@ -12,6 +12,7 @@
 
 #include <sys/types.h>      /* for pid_t */
 #include <signal.h>         /* for sig_atomic_t */
+#include <setjmp.h>         /* for sigsetjmp */
 
 enum error_return_type {
     DIRECT,
@@ -41,6 +42,8 @@ void trace_detach(pid_t, int);
  */
 /*@{*/
 extern volatile sig_atomic_t signal_received;
+extern volatile sig_atomic_t jump_is_safe;
+extern sigjmp_buf env;
 
 void install_safe(void*);
 void install_unsafe(void*);
@@ -53,8 +56,9 @@ void install_unsafe(void*);
 void* create_pipe(void);
 void cleanup_pipe(void*);
 
-enum run_result do_safe_read(void*);
-enum run_result do_unsafe_read(void*);
+enum run_result do_sigsafe_read(void*);
+enum run_result do_racebefore_read(void*);
+enum run_result do_raceafter_read(void*);
 void nudge_read(void*);
 /*@}*/
 

@@ -41,7 +41,7 @@ void cleanup_pipe(void *test_data) {
     free(test_data);
 }
 
-enum run_result do_safe_read(void *test_data) {
+enum run_result do_sigsafe_read(void *test_data) {
     char c;
     int *mypipe = (int*) test_data;
     int retval;
@@ -56,7 +56,7 @@ enum run_result do_safe_read(void *test_data) {
     }
 }
 
-enum run_result do_unsafe_read(void *test_data) {
+enum run_result do_racebefore_read(void *test_data) {
     char c;
     int *mypipe = (int*) test_data;
     int retval;
@@ -73,6 +73,27 @@ enum run_result do_unsafe_read(void *test_data) {
         return WEIRD;
     }
 }
+
+enum run_result do_raceafter_read(void *test_data) {
+    char c;
+    int *mypipe = (int*) test_data;
+    int retval;
+
+    sigsetjmp(env, 1);
+    jump_is_safe = 1;
+    if (signal_received) {
+        jump_is_safe = 0;
+        return INTERRUPTED;
+    }
+    retval = read(mypipe[READ], &c, sizeof(char));
+    jump_is_safe = 0;
+    if (retval == 1) {
+        return NORMAL;
+    } else {
+        return WEIRD;
+    }
+}
+
 
 void nudge_read(void *test_data) {
     char c = 26;

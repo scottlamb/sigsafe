@@ -8,11 +8,20 @@
  */
 
 #include <sigsafe.h>
+#include <stdlib.h>
 #include "race_checker.h"
 
 volatile sig_atomic_t signal_received;
+volatile sig_atomic_t jump_is_safe;
+sigjmp_buf env;
 
-static void note_signal(int signo) { signal_received++; }
+static void note_signal(int signo) {
+    signal_received++;
+    if (jump_is_safe) {
+        siglongjmp(env, 1);
+        abort();
+    }
+}
 
 void install_safe(void *test_data) {
     error_wrap(sigsafe_install_handler(SIGUSR1, NULL), "sigsafe_install_handler", ERRNO);
