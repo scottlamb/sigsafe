@@ -38,7 +38,7 @@ sigsafe_##name:                                                         ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
         cmp.ne.unc p6,p7 = 0,ret0                                       ;\
         ;;                                                              ;\
-(p6)    ld8 signaled = [ret0]                                           ;\
+(p6)    ld4 signaled = [ret0]                                           ;\
 (p6)    mov r15 = __NR_##name                                           ;\
         ;;                                                              ;\
 (p6)    cmp.eq.unc p6,p7 = 0,signaled                                   ;\
@@ -69,7 +69,7 @@ label:
 #define LOAD_TSD \
         addl o0 = @ltoff(sigsafe_key#), gp                              ;\
         ;;                                                              ;\
-        ld8 o0 = [o0]                                                   ;\
+        ld4 o0 = [o0]                                                   ;\
         ;;                                                              ;\
         br.call.sptk.few b0 = pthread_getspecific#
 #else

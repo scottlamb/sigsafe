@@ -22,7 +22,7 @@ LABEL(sigsafe_##name)                                                   ;\
         testq   %rax,%rax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
-        cmp     $0,(%rax)                                               ;\
+        cmpl    $0,(%rax)                                               ;\
         jne     _sigsafe_##name##_jmpto                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movq    $__NR_##name,%rax                                       ;\
@@ -99,8 +99,8 @@ label:
 
 #ifdef _THREAD_SAFE
 #define LOAD_TSD(args) \
-        SAVE_ARGS_##args                                                    ;\
-        movq    sigsafe_key, %rdi                                           ;\
+        SAVE_REGS_##args                                                    ;\
+        movl    sigsafe_key(%rip), %edi                                     ;\
         call    pthread_getspecific                                         ;\
         RESTORE_REGS_##args
 #else
