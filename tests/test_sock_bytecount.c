@@ -34,9 +34,10 @@ enum {
     WRITE
 } Half;
 
-/*#define USECS_TO_SLEEP 1000000*/
-#define BYTES_TO_TRANSFER 1048576/*4294967295u*/
-#define SINGLE_WRITE 1/*PIPE_BUF*/
+#define USECS_BETWEEN_SIGNALS 400
+#define USECS_BETWEEN_WRITES 50
+#define BYTES_TO_TRANSFER 268435456/*4294967295u*/
+#define SINGLE_WRITE PIPE_BUF
 #define SINGLE_READ (4*SINGLE_WRITE)
 
 enum error_return_type {
@@ -76,8 +77,8 @@ int main(void) {
                "socketpair", ERRNO);
 
     lowat = SINGLE_READ;
-    setsockopt(sockets[READ], SOL_SOCKET, SO_RCVLOWAT, &lowat,
-               sizeof(lowat));
+    error_wrap(setsockopt(sockets[READ], SOL_SOCKET, SO_RCVLOWAT, &lowat,
+                          sizeof(lowat)), "setsockopt", ERRNO);
 
     if (fork() == 0) { /* writer */
         while (total_sent < BYTES_TO_TRANSFER) {
@@ -86,13 +87,14 @@ int main(void) {
                            min(SINGLE_WRITE, BYTES_TO_TRANSFER - total_sent));
             error_wrap(retval, "write", ERRNO);
             total_sent += retval;
+            usleep(USECS_BETWEEN_WRITES);
         }
         return 0;
     }
 
     if (fork() == 0) { /* signaler */
         while (1) {
-            /*usleep(USECS_TO_SLEEP);*/
+            usleep(USECS_BETWEEN_SIGNALS);
             if (kill(parent_pid, SIGUSR1) < 0) {
                 printf("Signaler ending.\n");
                 exit(0);
@@ -105,9 +107,9 @@ int main(void) {
     while (total_rcvd < BYTES_TO_TRANSFER) {
         ssize_t retval;
         size_t this_transfer = min(SINGLE_READ, BYTES_TO_TRANSFER - total_rcvd);
+        sigsafe_clear_received();
         retval = sigsafe_read(sockets[READ], buffer, this_transfer);
         if (retval == -EINTR) {
-            sigsafe_clear_received();
             continue;
         }
         write(1, "#", 1);
