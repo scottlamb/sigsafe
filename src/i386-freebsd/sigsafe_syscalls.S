@@ -28,7 +28,7 @@ LABEL(_sigsafe_##name##_maxjmp)                                         ;\
         int     $0x80                                                   ;\
         jc      L_sigsafe_##name##_error  /* if carry flag set, error */;\
         ret                                                             ;\
-LABEL(_sigsafe_##name##_jmpto):                                         ;\
+LABEL(_sigsafe_##name##_jmpto)                                          ;\
         movl    $EINTR,%eax                                             ;\
 L_sigsafe_##name##_error:                                               ;\
         neg     %eax                /* return -errno */                 ;\

@@ -2,7 +2,16 @@ $Id$
 
 sigsafe version 0.1.3-dev release notes:
 
-* Linux/i386 and Linux/alpha appear to be working perfectly.
+* Linux/i386 appears to be working perfectly.
+
+* Linux/alpha has mixed results:
+
+  - On spe142 - an Alpha DS40 running Debian 3.0, kernel 2.4.18-generic -
+    it appears to work perfectly.
+
+  - On spe144 - an Alpha ES40 running RedHat 7.2, kernel 2.4.9-32.5smp,
+    glibc 2.2.4-29 - the race condition checker often shows the traced child
+    as dying from signal 1.
 
 * The FreeBSD/x86 support is preliminary:
 

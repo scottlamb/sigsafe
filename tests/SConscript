@@ -3,10 +3,12 @@
 # Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
 # This file is part of sigsafe, which is released under the MIT license.
 
-SConscript('platform_behavior/SConscript')
-SConscript('race_checker/SConscript')
+Import('env os_name')
 
-Import('env')
+SConscript('platform_behavior/SConscript')
+if os_name != 'freebsd':
+    SConscript('race_checker/SConscript')
+
 env = env.Copy()
 env.Prepend(LIBS = ['sigsafe', 'm'])
 
