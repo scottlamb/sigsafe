@@ -43,7 +43,7 @@ struct sigsafe_syscall_ sigsafe_syscalls_[] = {
 #undef SYSCALL
 
 #ifdef SIGSAFE_NO_SIGINFO
-static void sighandler(int signum, int code, struct siginfo *ctx) {
+static void sighandler(int signum, int code, struct sigcontext *ctx) {
 #else
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 #endif
