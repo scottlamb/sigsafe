@@ -63,6 +63,25 @@ int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
     return (ret == KERN_SUCCESS) ? 0 : -EINVAL;
 }
 
+PRIVATE_DEF(int sigsafe_sigsuspend_(const sigset_t mask));
+
+int sigsafe_sigsuspend(const sigset_t *mask_p) {
+    sigset_t mask;
+
+    if (mask_p)
+        mask = *mask_p;
+    else
+        sigemptyset(&mask);
+
+    return sigsafe_sigsuspend_(mask);
+}
+
+int sigsafe_pause(void) {
+    sigset_t mask;
+    sigemptyset(&mask);
+    return sigsafe_sigsuspend_(mask);
+}
+
 pid_t sigsafe_wait(int *status) {
     return sigsafe_wait4(WAIT_ANY, status, 0, NULL);
 }

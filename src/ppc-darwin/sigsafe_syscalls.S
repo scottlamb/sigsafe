@@ -28,12 +28,12 @@ NON_LAZY_STUB(_sigsafe_data_)
 LABEL(_sigsafe_##name)                                                      @\
         LOAD_TSD(args)                                                      @\
         cmpwi   r10,0                        /* check TSD pointer */        @\
-        beq     _sigsafe_##name##_maxjmp_                                   @\
         li      r0,SYS_##name                                               @\
+        beq-    _sigsafe_##name##_maxjmp_                                   @\
 HIDDEN(_sigsafe_##name##_minjmp_)                                           @\
         lwz     r10,0(r10)                   /* check TSD value */          @\
         cmpwi   r10,0                                                       @\
-        bne     _sigsafe_##name##_jmpto_                                    @\
+        bne-    _sigsafe_##name##_jmpto_                                    @\
 HIDDEN(_sigsafe_##name##_maxjmp_)                                           @\
         sc                                                                  @\
         POST_SC_##type                                                      @\

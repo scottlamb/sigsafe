@@ -2,6 +2,9 @@ $Id$
 
 These resources are helpful for writing ppc-darwin assembly:
 
+- <http://home-1.tiscali.nl/~solognt/codingstuff/ppc_cursus.html>
+  A good introduction to PPC assembly
+
 - <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/>
   Apple's implementation of these functions.
 
@@ -17,3 +20,9 @@ These resources are helpful for writing ppc-darwin assembly:
 
 - /usr/incldue/architecture/ppc/asm_help.h
   Describes stack layout and has lots of helpful macros
+
+- <http://www-106.ibm.com/developerworks/linux/library/l-ppc/>
+  The "Resources" section has a good list of sites with PPC information
+
+- <http://e-www.motorola.com/files/32bit/doc/ref_manual/MPC7450UM.pdf>
+  Motorola MPC7450 RISC Microprocessor Family User's Manual

@@ -288,6 +288,9 @@ int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
  */
 int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
+int sigsafe_sigsuspend(const sigset_t*);
+int sigsafe_pause(void);
+
 /*@}*/
 
 #ifdef __cplusplus
