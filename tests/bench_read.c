@@ -25,13 +25,14 @@
 #include <sigsafe.h>
 #endif
 
-#ifndef PIPE_BUF
-/* OSF/1 doesn't */
-#define PIPE_BUF _POSIX_PIPE_BUF
-#endif
+/*
+ * We want very few bytes per transfer to emphasize the time spent in the
+ * system call wrapper (userspace), not the time shuffling bytes around in the
+ * kernel.
+ */
+#define TRANSFER_SIZE 1
 
-#define BYTES_TO_TRANSFER           4294967295uL
-                            /* max: 4294967295uL */
+#define BYTES_TO_TRANSFER (TRANSFER_SIZE<<23)
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -77,7 +78,7 @@ int main(void) {
         sigsetjmp(env, 0);
 #endif
         retval = MYREAD(devzero, buffer,
-                min(PIPE_BUF, BYTES_TO_TRANSFER - total_transferred));
+                min(TRANSFER_SIZE, BYTES_TO_TRANSFER - total_transferred));
         assert(retval > 0);
         total_transferred += retval;
     }
