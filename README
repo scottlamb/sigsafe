@@ -10,7 +10,6 @@ directory for justification of that statement.)
 
 To really do this well, I would need to write assembly code for each
 combination of operating system and processor on which I want to run my code.
-So instead I've just defined the interfaces and will proceed if I decide I
-absolutely need this.
+So far I have done so only for Darwin/ppc.
 
 This project is licensed under the MIT license.

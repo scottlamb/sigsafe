@@ -17,8 +17,7 @@
  *
  * To really do this well, I would need to write assembly code for each
  * combination of operating system and processor on which I want to run my code.
- * So instead I've just defined the interfaces and will proceed if I decide I
- * absolutely need this.
+ * So far I have done so only for Darwin/ppc.
  *
  * See details on how this works in the "Modules" section.
  */
@@ -29,6 +28,14 @@
 #include <signal.h>
 #include <ucontext.h>
 #include <sys/select.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#ifdef HAVE_EPOLL
+#include <sys/epoll.h>
+#endif
+#ifdef HAVE_POLL
+#include <sys/poll.h>
+#endif
 #include <unistd.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -172,8 +179,8 @@ typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
  *                structure to the user-supplied location. This is allowed
  *                since <tt>sigsafe</tt> itself only notes that a signal has
  *                arrived, not even the signal number.
- * @return 0 on success; -1 with errno == <tt>EINVAL</tt> where it would be
- *         returned by <tt>sigaction(2)</tt>.
+ * @return 0 on success; <tt>-EINVAL</tt> where <tt>sigaction(2)</tt> would
+ *         return -1 and set errno to <tt>EINVAL</tt>.
  * @note
  * If you install any signal handlers through other methods, you should ensure
  * that they mask the "safe" signals, as jumping from nested signal handlers
@@ -206,22 +213,23 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * <tt>EINTR</tt> if a signal has been delivered before the function call or
  * immediately before the transition to kernel space within the function. They
  * will also return <tt>EINTR</tt> on receipt of a "safe" system call in
- * kernel space even when using <tt>SA_RESTART</tt>. These are their sole
- * visible differences from the standardized system calls of the same names.
- * Like the standardized system call wrappers, it will not return with
- * <tt>EINTR</tt> if the system call has already completed.
+ * kernel space even when using <tt>SA_RESTART</tt>. And they return error
+ * values as negative numbers rather than through <tt>errno</tt>. These are
+ * their sole visible differences from the standardized system calls of the
+ * same names. Like the standardized system call wrappers, it will not return
+ * with <tt>EINTR</tt> if the system call has already completed.
  * @par Usage example:
  * @code
- * int retval;
- * while ((retval = sigsafe_read(fd, buf, count)) == -1 && errno == EINTR) {
+ * ssize_t retval;
+ * while ((retval = sigsafe_read(fd, buf, count)) == -EINTR) {
  *     handle_signal();
  * }
  * if (retval < 0) {
- *     // other error condition
+ *     printf("read error %zd (%s)\n", -retval, strerror(-retval));
  * } else if (retval == 0) {
- *     // stream end
+ *     printf("stream end\n");
  * } else {
- *     // read bytes
+ *     printf("read %zd bytes\n", retval);
  * }
  * @endcode
  * @par Implementation:
@@ -230,10 +238,6 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * points of the code are known to the signal handler, which allows it to make
  * a long jump to the appropriate branch. Thus, they have virtually no
  * overhead over the standard system call wrappers.
- * @note
- * I'd also considered making them return error values directly, as the Linux
- * kernel does internally, to avoid the archaic <tt>errno</tt> use. I decided
- * instead to make them as close to the originals as possible.
  */
 
 /**
@@ -266,8 +270,10 @@ int sigsafe_writev(int d, const struct iovec *iov, int iovcnt);
  * Linux 2.6+ systems
  * @ingroup sigsafe_syscalls
  */
+#if defined(HAVE_EPOLL) || defined(DOXYGEN)
 int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
                        int timeout);
+#endif
 
 /**
  * Signal-safe <tt>kevent(2)</tt>.
@@ -293,13 +299,28 @@ int sigsafe_select(int nfds, fd_set *readfds, fd_set *writefds,
  * Signal-safe <tt>poll(2)</tt>.
  * @ingroup sigsafe_syscalls
  */
+#if defined(HAVE_POLL) || defined(DOXYGEN)
 int sigsafe_poll(struct pollfd *ufds, unsigned int nfds, int timeout);
+#endif
 
 /**
  * Signal-safe <tt>wait4(2)</tt>.
  * @ingroup sigsafe_syscalls
  */
 int sigsafe_wait4(pid_t wpid, int *status, int options, struct rusage *rusage);
+
+/**
+ * Signal-safe <tt>accept(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
+
+/**
+ * Signal-safe <tt>connect(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
+                    socklen_t addrlen);
 
 #ifdef ORG_SLAMB_SIGSAFE_INTERNAL
 struct sigsafe_tsd {

@@ -45,6 +45,12 @@ extern void *sigsafe_poll_jmpto;
 extern void *sigsafe_wait4_minjmp;
 extern void *sigsafe_wait4_maxjmp;
 extern void *sigsafe_wait4_jmpto;
+extern void *sigsafe_accept_minjmp;
+extern void *sigsafe_accept_maxjmp;
+extern void *sigsafe_accept_jmpto;
+extern void *sigsafe_connect_minjmp;
+extern void *sigsafe_connect_maxjmp;
+extern void *sigsafe_connect_jmpto;
 
 struct sigsafe_syscall sigsafe_syscalls[] = {
     { "read",       &sigsafe_read,       &sigsafe_read_minjmp,       &sigsafe_read_maxjmp,       &sigsafe_read_jmpto       },
@@ -60,6 +66,8 @@ struct sigsafe_syscall sigsafe_syscalls[] = {
     { "poll",       &sigsafe_poll,       &sigsafe_poll_minjmp,       &sigsafe_poll_maxjmp,       &sigsafe_poll_jmpto       },
 #endif
     { "wait4",      &sigsafe_wait4,      &sigsafe_wait4_minjmp,      &sigsafe_wait4_maxjmp,      &sigsafe_wait4_jmpto      },
+    { "accept",     &sigsafe_accept,     &sigsafe_accept_minjmp,     &sigsafe_accept_maxjmp,     &sigsafe_accept_jmpto     },
+    { "connect",    &sigsafe_connect,    &sigsafe_connect_minjmp,    &sigsafe_connect_maxjmp,    &sigsafe_connect_jmpto    },
     { NULL,         NULL,                NULL,                       NULL,                       NULL                      }
 };
 
