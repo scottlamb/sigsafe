@@ -33,9 +33,10 @@ enum run_result {
  * @defgroup trace Platform-specific process tracing functions
  */
 /*@{*/
+void trace_me(void);
 void trace_attach(pid_t);
 void trace_step(pid_t, int);
-void trace_detach(pid_t, int);
+void trace_continue(pid_t, int);
 /*@}*/
 
 /**

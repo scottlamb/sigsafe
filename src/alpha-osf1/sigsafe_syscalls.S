@@ -7,6 +7,7 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 #include <alpha/regdef.h>
+#include <alpha/pal.h>
 
 /*
  * Function call convention:
@@ -27,22 +28,26 @@
  *     $31              zero                always zero
  *
  * See section 6.4 in the assembler guide for setting up the prologue
+ */
+
+/*
+ * From alpha/asm.h:
  *
- * Linux system call convention:
- * v0 should hold __NR_##name on start
- * a0-a5 hold the arguments (just as they were passed in)
- * use callsys instruction
- * v0 on exit holds the return value; errors positive
- * a3 on exit is zero on success
+ * SYSCALL -- standard system call sequence
+ * The kernel expects arguments to be passed with the normal C calling
+ * sequence.  v0 should contain the system call number.  On return from
+ * the kernel mode, a3 will be 0 to indicate no error and non-zero to
+ * indicate an error; if an error occurred v0 will contain an errno.
+ * if the kernel return an error, setup a valid gp and jmp to _cerror
  */
 
 .comm sigsafe_key,4
 
 #define SYSCALL(name, args)                                              \
 .text                                                                   ;\
-.type sigsafe_##name,@function                                          ;\
+.globl sigsafe_##name                                                   ;\
 .ent sigsafe_##name                                                     ;\
-LABEL(sigsafe_##name)                                                   ;\
+sigsafe_##name:                                                         ;\
         .frame  sp,8+8*args,ra                                          ;\
         .mask   SAVEDMASK_##args,-8-8*args                              ;\
         ldgp    gp,0(pv)                                                ;\
@@ -51,7 +56,7 @@ LABEL(sigsafe_##name)                                                   ;\
         .prologue 1                                                     ;\
         lda     t0, sigsafe_key                                         ;\
         ldl     a0, 0(t0)                                               ;\
-        jsr     ra,pthread_getspecific                                  ;\
+        jsr     ra,__pthread_getspecific                                ;\
         ldgp    gp,0(ra)                                                ;\
         SAVERESTORE_REGS_##args(ldq)                                    ;\
         beq     v0, $sigsafe_##name##_nocompare                         ;\
@@ -61,7 +66,7 @@ LABEL(_sigsafe_##name##_minjmp)                                         ;\
 $sigsafe_##name##_nocompare:                                            ;\
         lda     v0, __NR_##name(zero)                                   ;\
 LABEL(_sigsafe_##name##_maxjmp)                                         ;\
-        callsys                                                         ;\
+        call_pal PAL_callsys                                            ;\
         bne     a3, $sigsafe_##name##_error                             ;\
         lda     sp, 8+8*args(sp)                                        ;\
         ret     zero, (ra), 1                                           ;\
@@ -73,7 +78,7 @@ $sigsafe_##name##_error:                                                ;\
         ret     zero, (ra), 1                                           ;\
 .end sigsafe_##name
 
-#define LABEL(label) .global label; label:
+#define LABEL(label) .globl label; label:
 
 /**
  * SAVEDMASK_##args is the registers to save for an args##-argument system

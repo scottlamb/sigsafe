@@ -5,8 +5,12 @@
 
 SConscript('race_checker/SConscript')
 
-Import('env')
+Import('env os_name')
 env = env.Copy()
+
+# TODO: make a configure-style test for nanosleep/librt
+if os_name == 'osf1':
+    env.Append(LIBS = ['rt'])
 
 for i in ['blocked_alarm',
           'setitimer_rounding',

@@ -98,77 +98,77 @@ struct test {
          * Tests that signal delivery is safe before, during, or after
          * the sigsafe_install_handler / sigsafe_install_tsd sequence.
          */
-        name:               "install_safe",
-        pre_fork_setup:     NULL,
-        child_setup:        /* Effectively ignoring the signal so the SIGUSR1
+        .name =             "install_safe",
+        .pre_fork_setup =   NULL,
+        .child_setup =      /* Effectively ignoring the signal so the SIGUSR1
                                doesn't cause it to exit on signal if delivered
                                before the install_sighandler */
                             &install_unsafe,
-        instrumented:       &do_install_safe,
-        nudge:              NULL,
-        teardown:           NULL,
-        result:             NOT_RUN,
-        expected:           SUCCESS,
-        in_most:            0 /* this test is _slow_ */
+        .instrumented =     &do_install_safe,
+        .nudge =            NULL,
+        .teardown =         NULL,
+        .result =           NOT_RUN,
+        .expected =         SUCCESS,
+        .in_most =          0 /* this test is _slow_ */
     },
     /*
      * XXX should have a test for dyld deadlock on Darwin
      * Ensure it fails when the workaround code in sigsafe.c is removed.
      */
     {
-        name:               "sigsafe_read",
-        pre_fork_setup:     &create_pipe,
-        child_setup:        &install_safe,
-        instrumented:       &do_sigsafe_read,
-        nudge:              &nudge_read,
-        teardown:           &cleanup_pipe,
-        result:             NOT_RUN,
-        expected:           SUCCESS,
-        in_most:            1
+        .name =             "sigsafe_read",
+        .pre_fork_setup =   &create_pipe,
+        .child_setup =      &install_safe,
+        .instrumented =     &do_sigsafe_read,
+        .nudge =            &nudge_read,
+        .teardown =         &cleanup_pipe,
+        .result =           NOT_RUN,
+        .expected =         SUCCESS,
+        .in_most =          1
     },
     {
-        name:               "sigsafe_select_read",
-        pre_fork_setup:     &create_pipe,
-        child_setup:        &do_sigsafe_select_read_child_setup,
-        instrumented:       &do_sigsafe_select_read,
-        nudge:              &nudge_read,
-        teardown:           &cleanup_pipe,
-        result:             NOT_RUN,
-        expected:           SUCCESS,
-        in_most:            1
+        .name =             "sigsafe_select_read",
+        .pre_fork_setup =   &create_pipe,
+        .child_setup =      &do_sigsafe_select_read_child_setup,
+        .instrumented =     &do_sigsafe_select_read,
+        .nudge =            &nudge_read,
+        .teardown =         &cleanup_pipe,
+        .result =           NOT_RUN,
+        .expected =         SUCCESS,
+        .in_most =          1
     },
     {
-        name:               "racebefore_read",
-        pre_fork_setup:     &create_pipe,
-        child_setup:        &install_unsafe,
-        instrumented:       &do_racebefore_read,
-        nudge:              &nudge_read,
-        teardown:           &cleanup_pipe,
-        result:             NOT_RUN,
-        expected:           IGNORED_SIGNAL,
-        in_most:            1
+        .name =             "racebefore_read",
+        .pre_fork_setup =   &create_pipe,
+        .child_setup =      &install_unsafe,
+        .instrumented =     &do_racebefore_read,
+        .nudge =            &nudge_read,
+        .teardown =         &cleanup_pipe,
+        .result =           NOT_RUN,
+        .expected =         IGNORED_SIGNAL,
+        .in_most =          1
     },
     {
-        name:               "raceafter_read",
-        pre_fork_setup:     &create_pipe,
-        child_setup:        &install_unsafe,
-        instrumented:       &do_raceafter_read,
-        nudge:              &nudge_read,
-        teardown:           &cleanup_pipe,
-        result:             NOT_RUN,
-        expected:           FORGOTTEN_RESULT,
-        in_most:            1
+        .name =             "raceafter_read",
+        .pre_fork_setup =   &create_pipe,
+        .child_setup =      &install_unsafe,
+        .instrumented =     &do_raceafter_read,
+        .nudge =            &nudge_read,
+        .teardown =         &cleanup_pipe,
+        .result =           NOT_RUN,
+        .expected =         FORGOTTEN_RESULT,
+        .in_most =          1
     },
     {
-        name:               NULL,
-        pre_fork_setup:     NULL,
-        child_setup:        NULL,
-        instrumented:       NULL,
-        nudge:              NULL,
-        teardown:           NULL,
-        result:             NOT_RUN,
-        expected:           NOT_RUN,
-        in_most:            0
+        .name =             NULL,
+        .pre_fork_setup =   NULL,
+        .child_setup =      NULL,
+        .instrumented =     NULL,
+        .nudge =            NULL,
+        .teardown =         NULL,
+        .result =           NOT_RUN,
+        .expected =         NOT_RUN,
+        .in_most =          0
     }
 };
 
@@ -249,7 +249,6 @@ void setup_for_wait_for_sigchld(void) {
  *         occurred first.
  */
 enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
-    int retval;
     sigset_t no_signals;
     struct itimerval it;
 
@@ -303,8 +302,7 @@ enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
             error_wrap(sigfillset(&other_signals), "sigfillset", ERRNO);
             error_wrap(sigdelset(&other_signals, SIGALRM), "sigdelset", ERRNO);
             sigsuspend(&other_signals);
-            assert(   retval == -1 && errno == EINTR
-                   && wait_for_sigchld_event == EVENT_TIMEOUT);
+            assert(wait_for_sigchld_event == EVENT_TIMEOUT);
             wait_for_sigchld_event = EVENT_NONE;
         }
     }
@@ -356,7 +354,8 @@ enum test_result run_test(const struct test *t) {
             if (t->child_setup != NULL) {
                 t->child_setup(test_data);
             }
-            raise(SIGSTOP); /* a marker for the parent to trace us with */
+            trace_me();
+            raise(SIGSTOP);
             /*
              * Using _exit instead of exit to trim the number of instructions
              * (no atexit handler). If this isn't available somewhere, maybe
@@ -434,7 +433,7 @@ enum test_result run_test(const struct test *t) {
              * We haven't gone all the way through;
              * send it a signal and continue.
              */
-            trace_detach(childpid, SIGUSR1);
+            trace_continue(childpid, SIGUSR1);
             if (wait_for_sigchld(&info, &timeout) == EVENT_TIMEOUT) {
                 /* Timeout */
                 smite_child(childpid);

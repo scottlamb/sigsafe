@@ -60,6 +60,8 @@ void thread_for_pid(pid_t pid, thread_t *thread) {
                     "mach_port_deallocate");
 }
 
+void trace_me(void) {}
+
 void trace_attach(pid_t pid) {
     thread_t thread;
     thread_for_pid(pid, &thread);
@@ -103,10 +105,10 @@ void trace_step(pid_t pid, int signum) {
  * Stupid Mach.
  */
 
-void trace_detach(pid_t pid, int signum) {
-    fprintf(stderr, "trace_detach: Wow, you got it to get this far?");
+void trace_continue(pid_t pid, int signum) {
+    fprintf(stderr, "trace_continue: Wow, you got it to get this far?");
     abort();
     /*errno = 0;
-    error_wrap(ptrace(PT_DETACH, pid, (caddr_t) 1, signum),
-               "ptrace(PT_DETACH, ...)", ERRNO);*/
+    error_wrap(ptrace(PT_CONTINUE, pid, (caddr_t) 1, signum),
+               "ptrace(PT_CONTINUE, ...)", ERRNO);*/
 }
