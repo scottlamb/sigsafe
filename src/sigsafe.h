@@ -318,13 +318,9 @@
  * ...
  *
  * sigsetjmp(signal_received, 1);
- * while (1) {
- *     jump_is_safe = 1;
- *     if (signal_received) {
- *         break;
- *     }
- *     if ((retval = syscall()) != -1 || errno != EINTR)
- *         break;
+ * jump_is_safe = 1;
+ * if (!signal_received) {
+ *     retval = syscall();
  * }
  * jump_is_safe = 0;
  * @endcode
