@@ -13,3 +13,6 @@ for i in ['blocked_alarm',
           'socket_timeout',
           'sigsuspend']:
     env.Program(target = 'test_' + i, source = 'test_' + i + '.c')
+
+# Not compiling (at least for now) test_trap_throw - it requires some weird
+# compiler options.
