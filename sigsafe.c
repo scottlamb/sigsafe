@@ -14,14 +14,17 @@ pthread_key_t sigsafe_key;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 sigsafe_user_handler_t user_handlers[NSIG];
 
+extern void *sigsafe_read_minjmp;
+extern void *sigsafe_read_maxjmp;
+
 struct sigsafe_syscall sigsafe_syscalls[] = {
-    { "read",       &sigsafe_read,          0, 0, 0 },
-  /*{ "write",      &sigsafe_write,         0, 0, 0 },
-    { "epoll_wait", &sigsafe_epoll_wait,    0, 0, 0 },
-    { "kevent",     &sigsafe_kevent,        0, 0, 0 },
-    { "select",     &sigsafe_select,        0, 0, 0 },
-    { "poll",       &sigsafe_poll,          0, 0, 0 },*/
-    { NULL,         NULL,                   0, 0, 0 }
+    { "read",       &sigsafe_read,          &sigsafe_read_minjmp, &sigsafe_read_maxjmp },
+  /*{ "write",      &sigsafe_write,         0, 0 },
+    { "epoll_wait", &sigsafe_epoll_wait,    0, 0 },
+    { "kevent",     &sigsafe_kevent,        0, 0 },
+    { "select",     &sigsafe_select,        0, 0 },
+    { "poll",       &sigsafe_poll,          0, 0 },*/
+    { NULL,         NULL,                   0, 0 }
 };
 
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
@@ -44,7 +47,7 @@ static void tsd_destructor(void* tsd_v) {
     free(tsd);
 }
 
-static void sigsafe_key_init(void) {
+static void sigsafe_init(void) {
     pthread_key_create(&sigsafe_key, &tsd_destructor);
 }
 
@@ -53,7 +56,7 @@ int sigsafe_install_handler(int signum,
     struct sigaction sa;
 
     assert(0 <= signum && signum < NSIG);
-    pthread_once(&sigsafe_once, &sigsafe_key_init);
+    pthread_once(&sigsafe_once, &sigsafe_init);
     user_handlers[signum] = handler;
     sa.sa_sigaction = (void*) &sighandler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;

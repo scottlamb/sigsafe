@@ -31,6 +31,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <setjmp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -239,7 +240,7 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * Signal-safe <tt>read(2)</tt>.
  * @ingroup sigsafe_syscalls
  */
-int sigsafe_read(int fd, void *buf, size_t count);
+int sigsafe_read(int fd, void *buf, size_t count, void*deadbeef);
 
 /**
  * Signal-safe <tt>write(2)</tt>.
@@ -287,14 +288,14 @@ struct sigsafe_tsd {
     volatile sig_atomic_t signal_received;
     intptr_t user_data;
     void (*destructor)(intptr_t);
+    jmp_buf env;
 };
 
 struct sigsafe_syscall {
     const char *name;
     void *address;
-    ptrdiff_t min_jump_off;
-    ptrdiff_t max_jump_off;
-    ptrdiff_t jump_to_off;
+    void *minjmp;
+    void *maxjmp;
 };
 
 extern struct sigsafe_syscall sigsafe_syscalls[];
@@ -303,6 +304,11 @@ extern pthread_key_t sigsafe_key;
 extern sigsafe_user_handler_t user_handlers[NSIG];
 
 void sighandler_for_platform(ucontext_t *ctx);
+void sigsafe_read_init(void);
+void sigsafe_write_init(void);
+void sigsafe_epoll_wait_init(void);
+void sigsafe_kevent_init(void);
+void sigsafe_select_init(void);
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL
 
 #ifdef __cplusplus

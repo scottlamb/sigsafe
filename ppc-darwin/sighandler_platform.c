@@ -8,34 +8,26 @@
 
 void sighandler_for_platform(ucontext_t *ctx) {
     struct sigsafe_syscall *s;
-    int *old_cancellation_type;
     void *srr0;
+    struct sigsafe_tsd *tsd;
     sigset_t *uc_sigmask;
 
     srr0 = (void*) ctx->uc_mcontext->ss.srr0;
 
     for (s = sigsafe_syscalls; s->address != NULL; s++) {
-        if (    srr0 >= s->address + s->max_jump_off
-            &&  srr0 <= s->address + s->max_jump_off) {
+        if (s->minjmp <= srr0 && srr0 <= s->maxjmp) {
 
             /* We are in a jump region. */
 
             /*
-             * XXX
-             * Set old_cancellation_type and uc_sigmask to point to correct
-             * place
+             * Set uc_sigmask to point to correct place.
+             * See BUILD_FRAME.
              */
-            abort();
+            uc_sigmask = (sigset_t*)((char*) ctx->uc_mcontext->ss.r1 + 56);
+            tsd = (struct sigsafe_tsd*) ctx->uc_mcontext->ss.r7;
 
-            pthread_setcanceltype(*old_cancellation_type, NULL);
             memcpy(uc_sigmask, &ctx->uc_sigmask, sizeof(sigset_t));
-
-            /*
-             * XXX
-             * restore important registers,
-             * jump to s->address + s->jump_to_off
-             */
-            abort();
+            longjmp(tsd->env, 1);
         }
     }
 }

@@ -7,9 +7,9 @@ int main(void) {
 
     sigsafe_install_handler(SIGUSR1, NULL);
     sigsafe_install_tsd(NULL, NULL);
-    raise(SIGUSR1);
+    /*raise(SIGUSR1);*/
     memset(buf, 0, sizeof buf);
-    retval = sigsafe_read(82, buf, sizeof(buf)-1);
+    retval = sigsafe_read(0, buf, sizeof(buf)-1, 0xdeadbeef);
     printf("read returned: %d\n", retval);
     if (retval >= 0) {
         printf("buf: %s\n", buf);

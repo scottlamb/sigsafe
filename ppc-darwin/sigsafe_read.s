@@ -8,6 +8,7 @@
 #error not dynamic
 #endif
 
+#define SIG_SETMASK 3 /* from /usr/include/sys/signal.h */
 #define EINTR 4 /* from /usr/include/sys/errno.h */
 #define SIGSAFE_SYSCALLS_READ_IDX 0
 
@@ -15,33 +16,39 @@
 ;                      r3      r4         r5
 ;                      (1w)    (1w)       (1w)
 
-NESTED(_sigsafe_read, 0, 3, 0, 0)
-        mr      r6,r3                       ; save a copy of fd; we'll overwrite r3
+NESTED(_sigsafe_read, 8, 3, 0, 0)
+        stw     r6,LOCAL_VAR(1)(r1)         ; make LOCAL_VAR(1) easy to find
+                                            ; in debugger
+        stw     r3,ARG_IN(1)(r1)
+        stw     r4,ARG_IN(2)(r1)
+        stw     r5,ARG_IN(3)(r1)
         EXTERN_TO_REG(r3,_sigsafe_key)      ; retrieve TSD
         CALL_EXTERN(_pthread_getspecific)
         cmpwi   r3,0                        ; if NULL, don't dereference
         beq     go
-minjmp: lwz     r7,0(r3)                    ; if signal received, go to eintr
-        cmpwi   r7,0
+        stw     r3,LOCAL_VAR(2)(r1)
+        addi    r3,r3,12
+        CALL_EXTERN(__setjmp)
+        cmpwi   r3,0
+        bne     jumped
+        lwz     r7,LOCAL_VAR(2)(r1)
+        lwz     r3,ARG_IN(1)(r1)
+        lwz     r4,ARG_IN(2)(r1)
+        lwz     r5,ARG_IN(3)(r1)
+LABEL(_sigsafe_read_minjmp)
+        lwz     r8,0(r7)                    ; if signal received, go to eintr
+        cmpwi   r8,0
         bne     eintr
-go:     mr      r3,r6                       ; put fd back into r3 for system call
-        li      r0,SYS_read
-maxjmp: sc
+go:     li      r0,SYS_read
+LABEL(_sigsafe_read_maxjmp)
+        sc
         b       error                       ; Error path
         RETURN
-jmpto:  ; XXX set signal mask correctly
+jumped: li      r3,SIG_SETMASK
+        ; LOCAL_VAR(1) is now the sigset_t, courtesy of the signal handler
+        lwz     r4,LOCAL_VAR(1)(r1)
+        sub     r5,r5,r5
+        CALL_EXTERN(_pthread_sigmask)
 eintr:  li      r3,EINTR
 error:  neg     r3,r3
         RETURN
-
-/*
-NESTED(_sigsafe_read_init, 0, 0, 0, 0)
-        EXTERN_TO_REG(r3,_sigsafe_syscalls)
-        li      r4,minjmp-_sigsafe_read     ; store minjmp offset
-        stw     r4, 8(r3)
-        li      r4,maxjmp-_sigsafe_read     ; store maxjmp offset
-        stw     r4,12(r3)
-        li      r4,jmpto-_sigsafe_read      ; store jmpto  offset
-        stw     r4,16(r3)
-        RETURN
- */
