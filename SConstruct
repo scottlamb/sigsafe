@@ -56,7 +56,9 @@ if env['CC'] == 'gcc':
 
 if type == 'debug':
     env.Append(CPPDEFINES=[
-        'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [C] to stderr whenever
+        'ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
+                                          # safe signal received
+        'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [J] to stderr whenever
                                           # jumping from sighandler
     ])
 

@@ -37,6 +37,9 @@ struct sigsafe_syscall sigsafe_syscalls[] = {
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd *tsd = pthread_getspecific(sigsafe_key);
     assert(0 <= signum && signum < SIGSAFE_NSIG);
+#ifdef ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL
+    write(2, "[S]", 3);
+#endif
     if (tsd != NULL) {
         if (user_handlers[signum] != NULL) {
             user_handlers[signum](signum, siginfo, ctx, tsd->user_data);
