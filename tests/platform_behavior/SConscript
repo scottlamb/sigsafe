@@ -1,0 +1,10 @@
+# vim: ft=python
+# $Id$
+# Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
+# This file is part of sigsafe, which is released under the MIT license.
+
+SConscript('race_checker/SConscript')
+
+Import('env')
+env = env.Copy()
+env.Program(target = 'test_blocked_alarm', source = 'test_blocked_alarm.c')

@@ -43,6 +43,7 @@ int main(void) {
     size_t total_transferred = 0;
 
 #ifdef DO_SAFE
+    sigsafe_install_handler(SIGUSR1, NULL);
     sigsafe_install_tsd(0, NULL);
 #endif
 

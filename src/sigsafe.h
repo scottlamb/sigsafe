@@ -409,27 +409,6 @@
  * operation. In practice, no libc has an acceptable implementation. See my
  * cancellation tests for details, but it will be a long time before this is
  * an acceptable option.</li>
- * <li>Masking any of several types of signals with <tt>sigprocmask(2)</tt> or
- * <tt>pthread_sigmask(2)</tt>. Since signals sent with <tt>kill(2)</tt> and
- * <tt>pthread_kill(2)</tt> are held for delivery when masked, you would
- * expect other signals to behave in the same way. But some ways of triggering
- * signals, like changes in child processes and alarm events, do not produce
- * the expected results when masked. So code like this:
- * @code
- * pthread_sigmask(SIG_SETMASK, &sigchld_set, NULL);
- * ...
- * ptrace(PTRACE_STEP, traced_pid, NULL, NULL);
- * while (1) {
- *     retval = sigtimedwait(&sigchld_set, &timeout);
- *     if (retval == -1 && errno == EAGAIN) {
- *         // timeout
- *     } else if (retval == SIGCHLD) {
- *         // child event
- *     }
- * }
- * @endcode
- * contains a race. If the child event happens before entering
- * <tt>sigtimedwait(2)</tt>, no signal will ever be delivered.</li>
  * <li>...and many other schemes.</li>
  * </ol>
  * <h2>The solution</h2>
