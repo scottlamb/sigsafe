@@ -7,8 +7,7 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/resource.h>

@@ -42,31 +42,36 @@
 #define SYSCALL(name, args)                                             ;\
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
-LABEL(sigsafe_##name)                                                   ;\
+.globl sigsafe_##name                                                   ;\
+sigsafe_##name:                                                         ;\
         LOAD_TSD                                                        ;\
         SAVE_REGS_##args                                                ;\
         COPY_STACK_PTR_##args                                           ;\
         SETUP_ARGS_##args                                               ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-LABEL(sigsafe_##name##_minjmp_)                                         ;\
+HIDDEN(sigsafe_##name##_minjmp_)                                         ;\
         cmp     $0,(%eax)                                               ;\
         jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movl    $__NR_##name,%eax                                       ;\
-LABEL(sigsafe_##name##_maxjmp_)                                         ;\
+HIDDEN(sigsafe_##name##_maxjmp_)                                         ;\
         int     $0x80                                                   ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\
-LABEL(sigsafe_##name##_jmpto_)                                          ;\
+HIDDEN(sigsafe_##name##_jmpto_)                                          ;\
         movl    $-EINTR,%eax                                            ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\
 .size sigsafe_##name, . - sigsafe_##name
 
-#define LABEL(label)                                                     \
-.global label                                                           ;\
-label:
+#ifdef PIC
+#define HIDE(label) .hidden label
+#else
+#define HIDE(label) .global label
+#endif
+
+#define HIDDEN(label) HIDE(label); label:
 
 /*
  * Since we're using the registers above for system call arguments, we
@@ -163,4 +168,5 @@ label:
         movl    sigsafe_data_,%eax
 #endif
 
+.hidden sigsafe_socketcall
 #include "syscalls.h"

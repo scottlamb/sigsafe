@@ -19,7 +19,7 @@
  * and other good things to know about ELF relocation, symbol versioning, etc.
  */
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && defined(PIC)
 #define PRIVATE __attribute__ ((visibility ("hidden")))
 #else
 #define PRIVATE

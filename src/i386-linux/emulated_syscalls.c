@@ -8,9 +8,10 @@
  */
 
 #define _GNU_SOURCE
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #include <linux/net.h>
+
+int sigsafe_socketcall(int call, unsigned long *args) PRIVATE;
 
 int sigsafe_accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
     unsigned long args[] = { s, (long) addr, (long) addrlen };
