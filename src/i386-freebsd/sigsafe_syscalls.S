@@ -15,7 +15,7 @@ LABEL(sigsafe_##name)                                                   ;\
         LOAD_TSD                                                        ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-LABEL(_sigsafe_##name##_minjmp)                                         ;\
+LABEL(sigsafe_##name##_minjmp_)                                         ;\
         cmp     $0,(%eax)                                               ;\
         jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
