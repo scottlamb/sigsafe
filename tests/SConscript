@@ -17,5 +17,5 @@ for i in [ #flags        #postfix
           (['DO_SETJMP'],'setjmp'),
           (['DO_SELECT'],'select')]:
     my_env = env.Copy()
-    env.Append(CFLAGS = i[0])
+    env.Append(CPPDEFINES = i[0])
     env.Program(target = 'bench_read_' + i[1], source = 'bench_read.c')
