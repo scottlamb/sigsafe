@@ -12,10 +12,10 @@
 #include <unistd.h>
 
 void sigsafe_handler_for_platform_(ucontext_t *ctx) {
-    struct sigsafe_syscall *s;
+    struct sigsafe_syscall_ *s;
     void *pc;
     pc = (void*) ctx->uc_mcontext.gregs[REG_PC];
-    for (s = sigsafe_syscalls; s->address != NULL; s++) {
+    for (s = sigsafe_syscalls_; s->minjmp != NULL; s++) {
         if (s->minjmp <= pc && pc <= s->maxjmp) {
 #ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);

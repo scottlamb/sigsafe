@@ -94,6 +94,30 @@ if conf.CheckFunc('epoll_wait'):
 if conf.CheckHeader('stdint.h'):
     conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_STDINT_H'])
 
+# Check for stuff needed only for testing
+
+extra_test_libs = []
+
+if not conf.CheckFunc('nanosleep'):
+    if conf.CheckLibWithHeader('rt', 'time.h', 'C', 'nanosleep(NULL,NULL);',
+                               autoadd = 0):
+        extra_test_libs.append('rt')
+    else:
+        print 'Unable to find library for nanosleep.'
+        Exit(1)
+
+if not conf.CheckFunc('connect'):
+    if conf.CheckLib('nsl', autoadd = 0):
+        extra_test_libs.append('nsl')
+    if conf.CheckLibWithHeader('socket', ['sys/types.h','sys/socket.h'],
+                               'C', 'connect(0, NULL, 0);', autoadd = 0):
+        extra_test_libs.append('socket')
+    else:
+        print 'Unable to find library for connect.'
+        Exit(1)
+
+Export('extra_test_libs')
+
 global_env = conf.Finish()
 
 #

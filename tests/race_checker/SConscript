@@ -3,9 +3,10 @@
 # Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
 # This file is part of sigsafe, which is released under the MIT license.
 
-Import('env os_name')
+Import('env os_name extra_test_libs')
 env = env.Copy()
 env.Prepend(LIBS = ['sigsafe'])
+env.Append(LIBS = extra_test_libs)
 env.Program(target = 'race_checker', source = [
     'race_checker.c',
     'races_generic.c',

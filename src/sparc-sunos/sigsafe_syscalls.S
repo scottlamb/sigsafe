@@ -40,14 +40,14 @@ sigsafe_##name:                                                     ;\
         LOAD_TSD                                                    ;\
         cmp     %g2, 0                                              ;\
 $sigsafe_##name##_check:                                            ;\
-        be      _sigsafe_##name##_maxjmp                            ;\
+        be      sigsafe_##name##_maxjmp_                            ;\
         mov     SYS_##name, %g1                                     ;\
-LABEL(_sigsafe_##name##_minjmp)                                     ;\
+LABEL(sigsafe_##name##_minjmp_)                                     ;\
         ld      [%g2], %g3                                          ;\
         cmp     %g3, 0                                              ;\
-        bne     _sigsafe_##name##_jmpto                             ;\
+        bne     sigsafe_##name##_jmpto_                             ;\
 .empty /* suppress "label in delay slot" warning */                 ;\
-LABEL(_sigsafe_##name##_maxjmp)                                     ;\
+LABEL(sigsafe_##name##_maxjmp_)                                     ;\
         te      ST_SYSCALL                                          ;\
         bcc     $sigsafe_##name##_out                               ;\
         cmp     %o0, ERESTART                                       ;\
@@ -55,7 +55,7 @@ LABEL(_sigsafe_##name##_maxjmp)                                     ;\
         cmp     %g2, 0                                              ;\
         retl                                                        ;\
         neg     %o0                                                 ;\
-LABEL(_sigsafe_##name##_jmpto)                                      ;\
+LABEL(sigsafe_##name##_jmpto_)                                      ;\
         mov     -EINTR, %o0                                         ;\
 $sigsafe_##name##_out:                                              ;\
         retl                                                        ;\

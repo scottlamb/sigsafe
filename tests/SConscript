@@ -3,7 +3,7 @@
 # Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
 # This file is part of sigsafe, which is released under the MIT license.
 
-Import('env os_name')
+Import('env os_name extra_test_libs')
 
 SConscript('platform_behavior/SConscript')
 if os_name != 'freebsd' and os_name != 'netbsd':
@@ -11,6 +11,7 @@ if os_name != 'freebsd' and os_name != 'netbsd':
 
 env = env.Copy()
 env.Prepend(LIBS = ['sigsafe', 'm'])
+env.Append(LIBS = extra_test_libs)
 
 for i in ['simple_test',
           'test_pipe_bytecount',

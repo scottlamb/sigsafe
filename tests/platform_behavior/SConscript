@@ -3,12 +3,9 @@
 # Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
 # This file is part of sigsafe, which is released under the MIT license.
 
-Import('env os_name')
+Import('env os_name extra_test_libs')
 env = env.Copy()
-
-# TODO: make a configure-style test for nanosleep/librt
-if os_name == 'osf1':
-    env.Append(LIBS = ['rt'])
+env.Append(LIBS = extra_test_libs)
 
 for i in ['blocked_alarm',
           'setitimer_rounding',
