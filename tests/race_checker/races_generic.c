@@ -15,7 +15,7 @@ static void note_signal(int signo) { signal_received++; }
 
 void install_safe(void *test_data) {
     error_wrap(sigsafe_install_handler(SIGUSR1, NULL), "sigsafe_install_handler", ERRNO);
-    error_wrap(sigsafe_install_tsd(NULL, NULL), "sigsafe_install_tsd", ERRNO);
+    error_wrap(sigsafe_install_tsd(0, NULL), "sigsafe_install_tsd", ERRNO);
 }
 
 void install_unsafe(void *test_data) {

@@ -8,18 +8,9 @@
 
 /**
  * @mainpage <tt>sigsafe</tt> library for safe signal handling.
- * A project I'm toying with, to implement a truly efficient, safe, reliable
- * method of delivering signals to specific threads.
- *
- * Thread cancellation really accomplishes 99% of what I want to do here, but
- * unfortunately thread cancellation does not work. (See the cancellation_tests
- * directory for justification of that statement.)
- *
- * To really do this well, I would need to write assembly code for each
- * combination of operating system and processor on which I want to run my code.
- * So far I have done so only for Darwin/ppc.
- *
- * See details on how this works in the "Modules" section.
+ * sigsafe is an efficient, safe, reliable method of delivering signals to
+ * specific threads. This is not easy without sigsafe - there are several
+ * common incorrect patterns. Please see the modules section for details.
  */
 
 #ifndef ORG_SLAMB_SIGSAFE_H

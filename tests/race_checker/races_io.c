@@ -76,5 +76,7 @@ enum run_result do_unsafe_read(void *test_data) {
 void nudge_read(void *test_data) {
     char c = 26;
     int *mypipe = (int*) test_data;
-    error_wrap(write(mypipe[WRITE], &c, sizeof(char)), "write", ERRNO);
+    int retval;
+    retval = error_wrap(write(mypipe[WRITE], &c, sizeof(char)), "write", ERRNO);
+    assert(retval == 1);
 }

@@ -139,8 +139,10 @@ void run_test(struct test *t) {
              num_steps_so_far++) {
             /*printf("(step)"); fflush(stdout);*/
             statuscode = -1;
-            trace_step(childpid, num_steps_so_far == nudge_step ? SIGUSR1
-                                                                : 0);
+            trace_step(childpid, 0);
+            if (nudge_step == num_steps_so_far) {
+                t->nudge(test_data);
+            }
             sigsetjmp(env, 1);
             jump_is_safe = 1;
             while (statuscode == -1) {
@@ -183,7 +185,7 @@ void run_test(struct test *t) {
             error_wrap(waitpid(childpid, &status, 0), "waitpid", ERRNO);
             if (WIFEXITED(status)) {
                 if (WEXITSTATUS(status) == INTERRUPTED
-                    && num_steps_before_continue >= nudge_step) {
+                    && num_steps_before_continue > nudge_step) {
                     printf("ERROR: Interrupted after nudge\n");
                 } else if (WEXITSTATUS(status) == NORMAL
                            && num_steps_before_continue < nudge_step) {
@@ -215,7 +217,7 @@ int main(void) {
     error_wrap(sigemptyset(&sa.sa_mask), "sigempty", ERRNO);
     sa.sa_flags = SA_SIGINFO;
     error_wrap(sigaction(SIGCHLD, &sa, NULL), "sigaction", ERRNO);
-    for (i = 0; tests[i]->name != NULL; i++) {
+    for (i = 0; tests[i].name != NULL; i++) {
         run_test(&tests[i]);
     }
     return 0;

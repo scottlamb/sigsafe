@@ -6,6 +6,7 @@
 #include <ucontext.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void sighandler_for_platform(ucontext_t *ctx) {
     struct sigsafe_syscall *s;
@@ -13,9 +14,9 @@ void sighandler_for_platform(ucontext_t *ctx) {
     eip = (void*) ctx->uc_mcontext.gregs[REG_EIP];
     for (s = sigsafe_syscalls; s->address != NULL; s++) {
         if (s->minjmp <= eip && eip <= s->maxjmp) {
+            write(2, "CTX", 3);
             ctx->uc_mcontext.gregs[REG_EIP] = (int) s->jmpto;
-            setcontext(ctx);
-            abort();
+            return;
         }
     }
 }

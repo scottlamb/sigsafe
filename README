@@ -1,15 +1,137 @@
 $Id$
 Scott Lamb <slamb@slamb.org>
 
-A project I'm toying with, to implement a truly efficient, safe, reliable
-method of delivering signals to specific threads.
+
+WHAT IS THIS?
+=============
+
+sigsafe is an efficient, safe, reliable method of delivering signals to
+specific threads. This is not easy without sigsafe - there are several common
+incorrect patterns. Please see the doxygen documentation for examples.
 
 Thread cancellation really accomplishes 99% of what I want to do here, but
-unfortunately thread cancellation does not work. (See the cancellation_tests
-directory for justification of that statement.)
+unfortunately thread cancellation does not work. (See my cancellation_tests
+page for justification of that statement.)
 
-To really do this well, I would need to write assembly code for each
-combination of operating system and processor on which I want to run my code.
-So far I have done so only for Darwin/ppc.
 
-This project is licensed under the MIT license.
+WHAT'S THE CATCH?
+=================
+
+Unfortunately, sigsafe requires writing assembly for each platform - platform
+being a combination of operating system and architecture. So far, it has been
+ported to:
+
+- Linux/x86
+- Darwin/ppc
+
+The other machines I have avaible to me are Linux/alpha, Tru64/alpha,
+HP-UX/PA-RISC, Solaris/sparc, FreeBSD/x86, FreeBSD/alpha, and Linux/ia64.
+I intend to eventually port it to most or all of them. Or, if you're
+impatient, you can tackle a port yourself. It's not as bad as it sounds. See
+the porting section below.
+
+
+WHAT'S INCLUDED?
+================
+
+- the sigsafe wrappers and control functions themselves
+
+- doxygen-generated API documentation
+
+- a performance benchmark
+  On the platforms I've tested so far, sigsafe performance is comparable to
+  raw system call performance. But don't take my word for it - run the test
+  yourself. It's easy!
+
+- a correctness test - it exhaustively searches for race conditions by
+  using process tracing to deliver the signal between each instruction
+  boundary.
+
+
+HOW DO I COMPILE IT?
+====================
+
+I used the scons build system avaible from <http://www.scons.org/>. It's
+Python-based, so you will also need to install Python if you don't have it
+already. (Or you could manually compile sigsafe; there aren't very many
+files.) I apologize for the additional dependency, but scons is completely
+superior to make+m4+sh+autoconf+automake. If I spent my time with an inferior
+build system, I couldn't spend it on more important things like improving the
+software itself.
+
+Assuming you've installed scons, type:
+
+    $ scons
+
+at the top level. It will produce everything in a build-XXX-YYY-ZZZ directory.
+Run the microbenchmark to see that performance is acceptable and the
+correctness tester to see that sigsafe works (and the other ways don't). Copy
+the library and include file to a suitable location, like /usr/local/bin.
+
+
+HOW DO I PORT SIGSAFE TO A NEW SYSTEM?
+======================================
+
+To port sigsafe to a new platform, you need to implement:
+
+- The system call wrappers themselves. They're mostly normal wrappers except
+  that they get a TSD (thread-specific data) key and look at received_signals
+  within it. They should have a symbol _sigsafe_XXX_minjmp where they read
+  the received_signals value from memory and _sigsafe_XXX_maxjmp where they
+  execute the system call. Between those two values (inclusive), the signal
+  handler will work by jumping to _sigsafe_XXX_jmpto. (It should not be in
+  that region.) Look at the other platforms for examples.
+
+- the signal handler. It should adjust the instruction pointer inside the
+  context argument as mentioned above. Then return to userspace. On all the
+  previous platforms, just modifying the context and returning normally is
+  sufficient. You might find instead:
+
+  - you need to use setcontext()
+  - you need to use sigreturn()
+  - you need to save a jump buffer in your system call wrappers with
+    sigsetjmp() and restore it with siglongjmp() (ugh)
+
+- the race condition tester. It uses process tracing, which is OS-specific.
+  Most systems seem to have ptrace() or ttrace() or similar; it's just a
+  matter of finding the right names for constants and such.
+
+Once you have an implementation, you should test it. This means both:
+
+- running the race condition tester to make sure your code is correct
+
+- running the microbenchmark to see that you have reasonable performance
+
+And then, send me a patch! The number of supported platforms will grow much
+faster this way.
+
+
+WHAT MAY I DO WITH THIS SOFTWARE?
+=================================
+
+This code is all released under the MIT license. The full license text is
+below. The short version is that you may do anything with it you like
+(including selling it) except claiming it as your own. You also must not sue
+me if it doesn't meet your requirements.
+
+The full license text:
+
+Copyright (C) 2004 Scott Lamb
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
