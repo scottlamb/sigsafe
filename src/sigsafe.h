@@ -10,14 +10,17 @@
 
 /**
  * @mainpage sigsafe library for safe signal handling.
- * sigsafe is a library for  efficient, safe, reliable method of promptly
- * delivering signals to specific threads. This is not easy without sigsafe
- * --- there are several common incorrect patterns, which I will describe more
- * below.
+ * sigsafe is a library for safely, reliably, and promptly handling signals to
+ * specific threads without significant overhead. Any code which attempts to
+ * do this without sigsafe is likely wrong. Please see below for common
+ * incorrect patterns and their safe replacement.
  *
- * sigsafe includes the code, documentation, a performance test, and a
- * correctness test which exhaustively finds race conditions by sending
- * signals at each instruction boundary.
+ * sigsafe includes code, documentation, a performance benchmark, and a
+ * correctness tester that exhaustively searches for race conditions with
+ * the <tt>ptrace(2)</tt> facility.
+ *
+ * sigsafe is available for Linux/i386 and Darwin/ppc (OS X). More platforms
+ * should be ready soon.
  *
  * Please look at the <tt>README</tt> file for installation notes and porting
  * hints.

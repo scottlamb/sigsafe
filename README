@@ -5,13 +5,19 @@ Scott Lamb <slamb@slamb.org>
 WHAT IS THIS?
 =============
 
-sigsafe is an efficient, safe, reliable method of delivering signals to
-specific threads. This is not easy without sigsafe - there are several common
-incorrect patterns. Please see the doxygen documentation for examples.
+sigsafe is a library for safely, reliably, and promptly handling signals to
+specific threads without significant overhead. Any code which attempts to do
+this without sigsafe is likely wrong. Please see the top-level API
+documentation for common incorrect patterns and their safe replacement.
 
-Thread cancellation really accomplishes 99% of what I want to do here, but
-unfortunately thread cancellation does not work. (See my cancellation_tests
-page for justification of that statement.)
+sigsafe includes code, documentation, a performance benchmark, and a
+correctness tester that exhaustively searches for race conditions with the
+ptrace(2) facility.
+
+sigsafe is available for Linux/i386 and Darwin/ppc (OS X). More platforms
+should be ready soon.
+
+sigsafe is released under the MIT license.
 
 
 WHAT'S THE CATCH?
