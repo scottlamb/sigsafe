@@ -11,6 +11,24 @@
 
 .comm sigsafe_key, 4
 
+/*
+ * The tricky things to remember below are:
+ *
+ * - DELAY SLOTS!
+ *   SPARC executes the next instruction in the pipeline before evaluating
+ *   a control transfer instruction (jump, call). Thus, things can appear to
+ *   happen out of sequence. ("Why is there an instruction after the return?")
+ *
+ * - ERESTART - we need to loop over the system call when it returns this
+ *   error, of course with correct signal handling. Watch with a null TSD
+ *   vs. having TSD contents.
+ *
+ * - "TE" - I enter the system call with a trap-if-equal to avoid using
+ *   an extra no-op in the delay slot. The two places it will happen are after
+ *   a BE when the TSD is null (thus TE is evaluated) or in a BNE's delay slot
+ *   (thus, the TE is evaluated only if not taking the branch).
+ */
+
 #define SYSCALL(name,args) \
 .text                                                               ;\
 .global sigsafe_##name                                              ;\
@@ -22,21 +40,21 @@ sigsafe_##name:                                                     ;\
         ld      [%g1], %o0                                          ;\
         mov     %o0, %g2                                            ;\
         restore                                                     ;\
-$sigsafe_##name##_check:                                            ;\
         cmp     %g2, 0                                              ;\
+$sigsafe_##name##_check:                                            ;\
         be      _sigsafe_##name##_maxjmp                            ;\
-        nop                                                         ;\
-LABEL(_sigsafe_##name##_minjmp)                                     ;\
-        ld      [%g2], %g1                                          ;\
-        cmp     %g1, %g0                                            ;\
-        bne     _sigsafe_##name##_jmpto                             ;\
         mov     SYS_##name, %g1                                     ;\
+LABEL(_sigsafe_##name##_minjmp)                                     ;\
+        ld      [%g2], %g3                                          ;\
+        cmp     %g3, 0                                              ;\
+        bne     _sigsafe_##name##_jmpto                             ;\
+.empty /* suppress "label in delay slot" warning */                 ;\
 LABEL(_sigsafe_##name##_maxjmp)                                     ;\
-        ta      ST_SYSCALL                                          ;\
+        te      ST_SYSCALL                                          ;\
         bcc     $sigsafe_##name##_out                               ;\
         cmp     %o0, ERESTART                                       ;\
         be      $sigsafe_##name##_check                             ;\
-        nop                                                         ;\
+        cmp     %g2, 0                                              ;\
         retl                                                        ;\
         neg     %o0                                                 ;\
 LABEL(_sigsafe_##name##_jmpto)                                      ;\
