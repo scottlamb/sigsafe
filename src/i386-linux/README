@@ -1,0 +1,17 @@
+Good news - there are lots of places that describe x86 assembly, and Linux
+uses in particular.
+
+- <http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/linux/i386/sysdep.h?cvsroot=glibc>
+  The libc sysdep.h; it has a lengthy comment describing the two ways of
+  making a syscall under Linux. (sysenter is apparently much faster when
+  available.)
+
+- <http://kerneltrap.org/node/view/531/1996>
+  Linux's VSYSCALL method for determining the fastest available method.
+  I don't think I can use it as-is; it doesn't mark which instruction
+  actually executes the system call, which I of course need for safety.
+
+- <http://www.delorie.com/djgpp/doc/brennan/brennan_att_inline_djgpp.html>
+  This page describes inline assembly syntax. It's probably easiest to do
+  stuff in C with inline assembly here (that's what glibc does). Though I'm
+  sure I could find plenty of documentation on the function call conventions.
