@@ -68,16 +68,22 @@
  *
  * void sighandler(int) {
  *     signal_received++;
- *     if (jump_is_safe) siglongjmp(env, 1);
+ *     if (jump_is_safe)
+ *         siglongjmp(env, 1);
  * }
  *
  * ...
  *
- * if (sigsetjmp(signal_received, 0) || signal_received) {
- *     handle_signal();
+ * sigsetjmp(signal_received, 1);
+ * while (1) {
+ *     jump_is_safe = 1;
+ *     if (signal_received) {
+ *         break;
+ *     }
+ *     if ((retval = syscall()) != -1 || errno != EINTR)
+ *         break;
  * }
- * int retval;
- * while ((retval = syscall()) == -1 && errno == EINTR) ;
+ * jump_is_safe = 0;
  * @endcode
  * This has a different race condition: if a signal arrives, it is impossible
  * to tell if the system call completed and, if so, what its result was. This
@@ -98,7 +104,25 @@
  * This also relies on jumping from a signal handler to be safe; this is not
  * defined by SUSv3 and notably is false on Cygwin. Linux and Solaris do
  * support this behavior, though neither correctly restores the cancellation
- * state.
+ * state. (This requirement is shared by <tt>sigsafe</tt>.)
+ * <p>It's also very hard to implement correctly. Notice several things about
+ * the code fragment above:</p>
+ * <ul>
+ * <li>it ensures <tt>jump_is_safe</tt> is set only after
+ *     <tt>sigsetjmp(2)</tt> is called and only for a very narrow window in
+ *     which no async signal-unsafe functions are called.</li>
+ * <li>it uses <tt>sigsetjmp(2)</tt> and <tt>siglongjmp(2)</tt> rather than
+ *     <tt>setjmp(2)</tt> and <tt>longjmp(2)</tt>; you can specify the signal
+ *     mask restoration behavior of the sig variants, while it is defined by
+ *     the platform for the plain functions.</li>
+ * <li>it checks <tt>signal_received</tt> <i>after</i> setting
+ *     <tt>jump_is_safe</tt>.</li>
+ * </ul>
+ * <p>These are all important!</p>
+ * <p>Also there's a performance problem - <tt>sigsetjmp(..., 1)</tt> makes a
+ * system call to retrieve the signal mask, so you're slowing down every
+ * iteration for correct signal behavior. To avoid that, you'd have to think
+ * about the signal mask yourself. Even more opportunities for bugs.</p>
  * <li>Using <tt>pselect(2)</tt>. This function is supposed to change the
  * signal mask atomically in the kernel for the duration of operation,
  * supporting error-free operation like this:
