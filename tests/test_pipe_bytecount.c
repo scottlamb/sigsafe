@@ -68,7 +68,7 @@ int main(void) {
     char buffer[SINGLE_TRANSFER];
     size_t total_sent = 0, total_rcvd = 0;
 
-    srand(time(NULL));
+    srandom(time(NULL));
 
     sigsafe_install_handler(SIGUSR1, &sigusr1handler);
     sigsafe_install_tsd(0, NULL);

@@ -126,6 +126,7 @@ struct test {
         .expected =         SUCCESS,
         .in_most =          1
     },
+#ifdef SIGSAFE_HAVE_SELECT
     {
         .name =             "sigsafe_select_read",
         .pre_fork_setup =   &create_pipe,
@@ -137,6 +138,7 @@ struct test {
         .expected =         SUCCESS,
         .in_most =          1
     },
+#endif
     {
         .name =             "racebefore_read",
         .pre_fork_setup =   &create_pipe,

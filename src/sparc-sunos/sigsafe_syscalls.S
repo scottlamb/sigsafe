@@ -20,27 +20,30 @@ sigsafe_##name:                                                     ;\
         set     sigsafe_key, %g1                                    ;\
         call    pthread_getspecific                                 ;\
         ld      [%g1], %o0                                          ;\
-        mov     %o0, %g1                                            ;\
+        mov     %o0, %g2                                            ;\
         restore                                                     ;\
-        cmp     %g1, 0                                              ;\
+$sigsafe_##name##_check:                                            ;\
+        cmp     %g2, 0                                              ;\
         be      _sigsafe_##name##_maxjmp                            ;\
         nop                                                         ;\
 LABEL(_sigsafe_##name##_minjmp)                                     ;\
-        ld      [%g1], %g1                                          ;\
+        ld      [%g2], %g1                                          ;\
         cmp     %g1, %g0                                            ;\
         bne     _sigsafe_##name##_jmpto                             ;\
         mov     SYS_##name, %g1                                     ;\
 LABEL(_sigsafe_##name##_maxjmp)                                     ;\
         ta      ST_SYSCALL                                          ;\
-        bcs     $sigsafe_##name##_error                             ;\
+        bcc     $sigsafe_##name##_out                               ;\
+        cmp     %o0, ERESTART                                       ;\
+        be      $sigsafe_##name##_check                             ;\
         nop                                                         ;\
-        retl                                                        ;\
-        nop                                                         ;\
-LABEL(_sigsafe_##name##_jmpto)                                      ;\
-        mov     EINTR, %o0                                          ;\
-$sigsafe_##name##_error:                                            ;\
         retl                                                        ;\
         neg     %o0                                                 ;\
+LABEL(_sigsafe_##name##_jmpto)                                      ;\
+        mov     -EINTR, %o0                                         ;\
+$sigsafe_##name##_out:                                              ;\
+        retl                                                        ;\
+        nop                                                         ;\
 .size sigsafe_##name, . - sigsafe_##name
 
 #define LABEL(label) .global label; label:

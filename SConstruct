@@ -100,10 +100,13 @@ else:
 
 conf = env.Configure()
 
-# Manually excluding Darwin from poll() because they have a poll() that
-# is emulated poorly with select().
 if os_name != 'darwin':
+    # Darwin poll is emulated through select
     conf.env.Append(CPPDEFINES = ['HAVE_POLL'])
+
+if os_name != 'sunos':
+    # Solaris select is emulated through poll
+    conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_SELECT'])
 
 if conf.CheckFunc('kevent'):
     conf.env.Append(CPPDEFINES = ['HAVE_KEVENT'])

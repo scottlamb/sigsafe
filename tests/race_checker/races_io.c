@@ -15,7 +15,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <pthread.h>
 #include <errno.h>
@@ -43,6 +42,7 @@ void cleanup_pipe(void *test_data) {
     free(test_data);
 }
 
+#ifdef SIGSAFE_HAVE_SELECT
 void do_sigsafe_select_read_child_setup(void *test_data) {
     int *mypipe = (int*) test_data;
     int flags;
@@ -53,6 +53,7 @@ void do_sigsafe_select_read_child_setup(void *test_data) {
     flags |= O_NONBLOCK;
     error_wrap(fcntl(mypipe[READ], F_SETFL, flags), "fcntl", ERRNO);
 }
+#endif
 
 enum run_result do_sigsafe_read(void *test_data) {
     char c;
@@ -69,6 +70,7 @@ enum run_result do_sigsafe_read(void *test_data) {
     }
 }
 
+#ifdef SIGSAFE_HAVE_SELECT
 enum run_result do_sigsafe_select_read(void *test_data) {
     fd_set readset;
     char c;
@@ -94,6 +96,7 @@ enum run_result do_sigsafe_select_read(void *test_data) {
     }
     return WEIRD;
 }
+#endif
 
 enum run_result do_racebefore_read(void *test_data) {
     char c;
