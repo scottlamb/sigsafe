@@ -1,9 +1,11 @@
-/*
- * $Id$
- * Scott Lamb <slamb@slamb.org>
- *
+/** @file
  * Tests throughput speed of a pipe with variations of read(), to know how
  * sigsafe compares performance-wise to other methods of signal handling.
+ * @legal
+ * Copyright &copy 2004 &lt;slamb@slamb.org&gt;.
+ * This file is part of sigsafe, which is released under the MIT license.
+ * @version     $Id$
+ * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
 #include <limits.h>

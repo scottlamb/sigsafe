@@ -1,33 +1,15 @@
 $Id$
 
-See <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/> - Apple's
-implementation of these functions. What's here is strongly influenced by their
-code. (It is thus under the APSL 2.0.)
+These resources are helpful for writing ppc-darwin assembly:
 
-<http://www.securiteam.com/securityreviews/PPC_OSX_Shellcode_Assembly.pdf>
-also looks helpful. It talks about shellcode, but it has some useful small
-examples.
+- <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/>
+  Apple's implementation of these functions.
 
-Things I've learned:
+- <http://www.securiteam.com/securityreviews/PPC_OSX_Shellcode_Assembly.pdf>
+  A paper about ppc/darwin shellcode, but it has some useful small examples.
 
-- The stack layout is described in /usr/include/architecture/ppc/asm_help.h
+- /usr/include/architecture/ppc/reg_help.h
+  Describes register usage
 
-- Register usage:
-
-    r0 (a.k.a lr?)
-    r1 (a.k.a sp)       stack pointer
-    r2
-    r3                  return value (32-bit or least significant word for 64)
-    r4                  return value (most significant word for 64-bit)
-    ...
-    r12 (a.k.a cr?)     used for picify
-    ...
-    r31 (a.k.a fp?)
-
-- The arguments seemed to be retrieved from the _registers_. r3 and up.
-  Maybe the stack space is just for if they are about to be clobbered.
-
-Questions I have:
-
-- What are GRF and FPF registers? BUILD_FRAME (and, indirectly, NESTED) talk
-  about these.
+- /usr/incldue/architecture/ppc/asm_help.h
+  Describes stack layout and has lots of helpful macros

@@ -1,4 +1,8 @@
-/* $Id$ */
+/*
+ * $Id$
+ * Copyright (C) 2004 Scott Lamb <slamb@slamb.org>
+ * This file is part of sigsafe, which is released under the MIT license.
+ */
 
 #include <asm/unistd.h>
 #include <asm/errno.h>

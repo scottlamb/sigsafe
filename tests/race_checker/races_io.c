@@ -1,7 +1,8 @@
-/**
+/** @file
+ * Tests for race conditions in IO-based functions.
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
- * This file is released under the MIT license.
+ * This file is part of sigsafe, which is released under the MIT license.
  * @version         $Id$
  * @author          Scott Lamb &lt;slamb@slamb.org&gt;
  */

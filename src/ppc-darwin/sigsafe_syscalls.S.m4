@@ -1,6 +1,11 @@
 dnl Ignore the next line
-/* This is automatically generated from sigsafe_syscalls.S.m4
-/* $Id$ */
+/* This is automatically generated from sigsafe_syscalls.S.m4 */
+
+/*
+ * $Id$
+ * Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
+ * This file is part of sigsafe, which is released under the MIT license.
+ */
 
 #import <architecture/ppc/asm_help.h>
 #import <architecture/ppc/pseudo_inst.h>

@@ -1,50 +1,49 @@
-/**
- * @file sigsafe.h Alternate system call wrappers which provide signal safety.
+/** @file
+ * Alternate system call wrappers which provide signal safety.
  * See the module description for more in-depth discussion.
- * <p>This file is released under the MIT license.</p>
- * @version $Id$
- * @author  Scott Lamb &lt;slamb@slamb.org&gt;
+ * @legal
+ * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
+ * This file is part of sigsafe, which is released under the MIT license.
+ * @version     $Id$
+ * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
 /**
- * @mainpage <tt>sigsafe</tt> library for safe signal handling.
- * sigsafe is an efficient, safe, reliable method of delivering signals to
- * specific threads. This is not easy without sigsafe - there are several
- * common incorrect patterns. Please see the modules section for details.
- */
-
-#ifndef ORG_SLAMB_SIGSAFE_H
-#define ORG_SLAMB_SIGSAFE_H
-
-#include <signal.h>
-#include <ucontext.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#ifdef HAVE_EPOLL
-#include <sys/epoll.h>
-#endif
-#ifdef HAVE_POLL
-#include <sys/poll.h>
-#endif
-#include <unistd.h>
-#include <stddef.h>
-#include <setjmp.h>
-#include <time.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @defgroup sigsafe Safe signals
- * These functions provide a safe way for handling signals in (potentially
- * multi-threaded) programs. In particular, they are designed to replace the
- * following problematic patterns:
+ * @mainpage sigsafe library for safe signal handling.
+ * sigsafe is a library for  efficient, safe, reliable method of delivering
+ * signals to specific threads. This is not easy without sigsafe ---
+ * there are several common incorrect patterns, which I will describe more
+ * below.
+ *
+ * sigsafe includes the code, documentation, a performance test, and a
+ * correctness test which exhaustively finds race conditions by sending
+ * signals at each instruction boundary.
+ *
+ * Please look at the <tt>README</tt> file for installation notes and porting
+ * hints.
+ *
+ * <h2>The problem</h2>
+ * This library is designed to replace the following problematic patterns:
  * <ol>
+ * <li>Calling async signal-unsafe functions from signal handlers.
+ * @code
+ * void unsafe_sighandler_a(int signum) {
+ *     printf("Received signal %d\n", signum);
+ * }
+ * @endcode
+ *
+ * @code
+ * void unsafe_sighandler_b(int signum) {
+ *     mylist->tail = (struct mylist*) malloc(sizeof(mylist));
+ *     ...
+ * }
+ * @endcode
+ * SUSv3 (the Single UNIX Specification, version 3) defines a list of
+ * functions which are safe from any time from signal handlers. It's a very
+ * short list. In particular, you must not call <tt>malloc(3)</tt> from a
+ * signal handler, or any function which depends on it. Failures are rare
+ * enough that people think their code is correct, but this can lead to subtle
+ * bugs.</li>
  * <li>Polling for a variable before system calls and on <tt>EINTR</tt>:
  * @code
  * volatile sig_atomic_t signal_received;
@@ -122,7 +121,50 @@ extern "C" {
  * @endcode
  * This method is correct but slow, since it doubles the number of system
  * calls to be made on basic IO operations.</li>
+ * <li>Thread cancellation. In theory, thread cancellation allows for correct
+ * operation. In practice, no libc has an acceptable implementation. See my
+ * cancellation tests for details, but it will be a long time before this is
+ * an acceptable option.</li>
  * </ol>
+ * <h2>The solution</h2>
+ * With <tt>sigsafe</tt>, you can write code like this:
+ * @code
+ *
+ * void myhandler(int signum, siginfo_t *info, void *ctx, intptr_t user_data) {
+ *     sigaddset((sigset_t*) user_data, signum);
+ * }
+ *
+ * int main(void) {
+ *     ...
+ *     sigsafe_install_handler(SIGUSR1, &myhandler);
+ *     sigsafe_install_handler(SIGUSR2, &myhandler);
+ *     ...
+ *  }
+ *
+ *  ...
+ *
+ * void* thread_entry(void*) {
+ *     ...
+ *     sigsafe_install_tsd((intptr_t) malloc(sizeof sigset_t), &free);
+ *     ...
+ * }
+ *
+ * void read_some_data(void) {
+ *     int retval;
+ *
+ *     while ((retval = sigsafe_read(fd, buf, count)) == EINTR) {
+ *         sigset_t *received = (sigset_t*) sigsafe_clear_received();
+ *         if (sigismember(received, SIGUSR1)) {
+ *             printf("Received USR1 signal\n");
+ *         }
+ *         if (sigismember(received, SIGUSR2)) {
+ *             printf("Received USR2 signal\n");
+ *         }
+ *     }
+ *     ...
+ * }
+ * @endcode
+ *
  * @note
  * This is not the One True Method for correct signal handling. In particular,
  * there are two other methods you should consider:
@@ -136,20 +178,51 @@ extern "C" {
  *     pipe-write-from-signal-handler methods may work well for you.</li>
  * </ol>
  * @warning
- * The <tt>sigsafe</tt> library is extremely non-portable! Everything here
- * relies on alternate system call wrappers being implemented in C. This means
- * that there is <i>significant</i> work involved in porting it to a new
+ * The <tt>sigsafe</tt> library is non-portable! Everything here relies on
+ * alternate system call wrappers implemented in assembly and a signal handler
+ * which adjusts the instruction pointer when signals arrive in system calls.
+ * This means that there is significant work involved in porting it to a new
  * platform (where platform is a combination of OS and architecture).
  *
  * Additionally, it makes the same assumption as all other methods for
  * handling thread-directed signals (with the exception of <tt>kevent(2)</tt>
  * handling), that <tt>pthread_getspecific(2)</tt> is async signal-safe. This
  * is not guaranteed by SUSv3.
+ *
+ * @legal
+ * sigsafe is copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
+ * It is released under the MIT license. See the <tt>README</tt> file for the
+ * full license text.
  */
+
+#ifndef ORG_SLAMB_SIGSAFE_H
+#define ORG_SLAMB_SIGSAFE_H
+
+#include <signal.h>
+#include <ucontext.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#ifdef HAVE_EPOLL
+#include <sys/epoll.h>
+#endif
+#ifdef HAVE_POLL
+#include <sys/poll.h>
+#endif
+#include <unistd.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup sigsafe_control Signal control functions
- * @ingroup sigsafe
  */
 
 /**
@@ -184,7 +257,7 @@ typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
  * Call this function at most once for each signal number.
  * @ingroup sigsafe_control
  */
-int sigsafe_install_handler(int signum, sigsafe_user_handler_t);
+int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler);
 
 /**
  * Installs thread-specific data.
@@ -217,7 +290,6 @@ intptr_t sigsafe_clear_received(void);
 
 /**
  * @defgroup sigsafe_syscalls System call wrappers
- * @ingroup sigsafe
  * These are alternate system call wrappers which are guaranteed to return
  * an <tt>EINTR</tt> immediately if a "safe" signal is delivered on or before
  * the transition back to userspace. In particular, they will return

@@ -1,7 +1,10 @@
-/**
+/** @file
  * Platform-independent portion of the <tt>sigsafe</tt> implementation.
- * @version $Id$
- * @author  Scott Lamb &lt;slamb@slamb.org&gt;
+ * @legal
+ * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
+ * This file is part of sigsafe, which is released under the MIT license.
+ * @version     $Id$
+ * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
 #define ORG_SLAMB_SIGSAFE_INTERNAL
@@ -55,8 +58,7 @@ static void sigsafe_init(void) {
     pthread_key_create(&sigsafe_key, &tsd_destructor);
 }
 
-int sigsafe_install_handler(int signum,
-        void (*handler)(int, siginfo_t*, ucontext_t*, intptr_t)) {
+int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     struct sigaction sa;
 
     assert(0 <= signum && signum < SIGSAFE_NSIG);
