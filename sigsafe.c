@@ -4,19 +4,14 @@
  * @author  Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
+#define ORG_SLAMB_SIGSAFE_INTERNAL
 #include <sigsafe.h>
 #include <pthread.h>
+#include <assert.h>
+#include <stdlib.h>
 
-struct sigsafe_tsd {
-    volatile sig_atomic_t signal_received;
-    intptr_t user_data;
-    void (*destructor)(intptr_t);
-};
-
-static pthread_key_t sigsafe_key = PTHREAD_KEY_INITIALIZER;
-static void (*user_handlers)(int, siginfo_t*, ucontext_t*, intptr_t)[_NSIGS];
-
-void sighandler_for_platform(ucontext_t *ctx);
+pthread_key_t sigsafe_key = PTHREAD_KEY_INITIALIZER;
+void (*user_handlers)(int, siginfo_t*, ucontext_t*, intptr_t)[_NSIGS];
 
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd *tsd = pthread_getspecific(sigsafe_key);
@@ -51,6 +46,7 @@ static void tsd_destructor(void* tsd_v) {
 
 int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     struct sigsafe_tsd *tsd = NULL;
+    int retval;
 
     assert(pthread_getspecific(sigsafe_key) == NULL);
 
@@ -64,8 +60,10 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     tsd->user_data = user_data;
     tsd->destructor = destructor;
 
-    if (pthread_setspecific(sigsafe_key, tsd) == -1) {
+    retval = pthread_setspecific(sigsafe_key, tsd)
+    if (retval != 0) {
         free(tsd);
+        errno = retval;
         return -1;
     }
 

@@ -26,6 +26,10 @@
 #ifndef ORG_SLAMB_SIGSAFE_H
 #define ORG_SLAMB_SIGSAFE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup sigsafe Safe signals
  * These functions provide a safe way for handling signals in (potentially
@@ -266,4 +270,23 @@ int sigsafe_select(int nfds, fd_set *readfds, fd_set *writefds,
  */
 int sigsafe_poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 
+#ifdef ORG_SLAMB_SIGSAFE_INTERNAL
+struct sigsafe_tsd {
+    volatile sig_atomic_t signal_received;
+    intptr_t user_data;
+    void (*destructor)(intptr_t);
+};
+
+extern pthread_key_t sigsafe_key;
+extern void (*user_handlers)(int, siginfo_t*, ucontext_t*, intptr_t)[_NSIGS];
+
+void sighandler_for_platform(ucontext_t *ctx);
+#endif
+
+
+#endif // ORG_SLAMB_SIGSAFE_INTERNAL
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 #endif /* !ORG_SLAMB_SIGSAFE_H */

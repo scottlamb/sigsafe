@@ -1,3 +1,5 @@
+/* $Id$ */
+
 .globl _main
 .text
 _main:

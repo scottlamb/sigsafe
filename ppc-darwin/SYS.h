@@ -1,3 +1,5 @@
+/* $Id */
+
 #include <sys/syscall.h>
 
 #define simple_kernel_trap(trap_name, trap_number)      \

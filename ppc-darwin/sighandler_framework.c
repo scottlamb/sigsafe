@@ -1,3 +1,5 @@
+/* $Id$ */
+
 void sighandler_platform(ucontext_t *ctx) {
     if (/* thread in jump region */) {
         int *old_cancellation_type = /* place up stack */;

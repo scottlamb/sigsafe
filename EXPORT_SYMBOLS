@@ -1,0 +1,8 @@
+sigsafe_install_handler
+sigsafe_install_tsd
+sigsafe_read
+sigsafe_write
+sigsafe_epoll_wait
+sigsafe_kevent
+sigsafe_select
+sigsafe_poll

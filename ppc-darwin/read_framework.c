@@ -1,3 +1,5 @@
+/* $Id$ */
+
 ssize_t sigsafe_read(int fd, void *buf, size_t count) {
     struct sigsafe_tsd *tsd;
     int old_cancellation_type;
