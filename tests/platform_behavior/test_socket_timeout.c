@@ -4,6 +4,10 @@
  * <tt>setsockopt(..., SO_SNDTIMEO, ...)</tt> support is available.
  * This is the most straightforward and efficient way to implement timeouts in
  * code waiting for network input. (And doesn't require signal usage at all.)
+ * SUSv3 notes <a
+ * href="http://www.opengroup.org/onlinepubs/007904975/functions/setsockopt.html">here</a>
+ * that "not all implementations all this option to be set" in
+ * both cases.
  * @legal
  * Copyright &copy; 2004 &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.
