@@ -1,7 +1,7 @@
 // $Id$
 
 /**
- * @page background Background
+ * @page backgnd Background information
  *
  * (This section is intended to describe what signals are, how they are
  * useful, and the evolution of mechanisms to handle them safely. If you're
