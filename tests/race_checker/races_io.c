@@ -7,9 +7,11 @@
  * @author          Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
+#include <sys/select.h>
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ptrace.h>
@@ -25,7 +27,7 @@ enum pipe_half {
     WRITE
 };
 
-void* create_pipe() {
+void* create_pipe(void) {
     void *test_data = NULL;
 
     test_data = malloc(sizeof(int)*2);
@@ -41,6 +43,17 @@ void cleanup_pipe(void *test_data) {
     free(test_data);
 }
 
+void do_sigsafe_select_read_child_setup(void *test_data) {
+    int *mypipe = (int*) test_data;
+    int flags;
+
+    install_safe(test_data);
+
+    flags = error_wrap(fcntl(mypipe[READ], F_GETFL), "fcntl", ERRNO);
+    flags |= O_NONBLOCK;
+    error_wrap(fcntl(mypipe[READ], F_SETFL, flags), "fcntl", ERRNO);
+}
+
 enum run_result do_sigsafe_read(void *test_data) {
     char c;
     int *mypipe = (int*) test_data;
@@ -54,6 +67,32 @@ enum run_result do_sigsafe_read(void *test_data) {
     } else {
         return WEIRD;
     }
+}
+
+enum run_result do_sigsafe_select_read(void *test_data) {
+    fd_set readset;
+    char c;
+    int *mypipe = (int*) test_data;
+    int retval;
+
+    FD_ZERO(&readset);
+    FD_SET(mypipe[READ], &readset);
+    retval = sigsafe_select(mypipe[READ]+1, &readset, NULL, NULL, NULL);
+    if (retval == -EINTR) {
+        return INTERRUPTED;
+    } else if (retval != 1) {
+        error_wrap(retval, "sigsafe_select", NEGATIVE);
+        return WEIRD;
+    }
+
+    sigsafe_clear_received();
+
+    retval = error_wrap(sigsafe_read(mypipe[READ], &c, sizeof(char)),
+                        "sigsafe_read", NEGATIVE);
+    if (retval == 1) {
+        return NORMAL;
+    }
+    return WEIRD;
 }
 
 enum run_result do_racebefore_read(void *test_data) {
@@ -93,7 +132,6 @@ enum run_result do_raceafter_read(void *test_data) {
         return WEIRD;
     }
 }
-
 
 void nudge_read(void *test_data) {
     char c = 26;

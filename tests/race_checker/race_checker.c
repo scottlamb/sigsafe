@@ -127,6 +127,17 @@ struct test {
         in_most:            1
     },
     {
+        name:               "sigsafe_select_read",
+        pre_fork_setup:     &create_pipe,
+        child_setup:        &do_sigsafe_select_read_child_setup,
+        instrumented:       &do_sigsafe_select_read,
+        nudge:              &nudge_read,
+        teardown:           &cleanup_pipe,
+        result:             NOT_RUN,
+        expected:           SUCCESS,
+        in_most:            1
+    },
+    {
         name:               "racebefore_read",
         pre_fork_setup:     &create_pipe,
         child_setup:        &install_unsafe,
@@ -459,13 +470,17 @@ enum test_result run_test(const struct test *t) {
                 } else if (WEXITSTATUS(info.si_status) == NORMAL) {
                     /*printf("\nGood; normal\n");*/
                 } else {
-                    abort();
+                    printf("\nERROR: test returned WEIRD\n\n");
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
+                    return FAILURE;
                 }
             } else if (   info.si_code == CLD_KILLED
                        || info.si_code == CLD_DUMPED) {
                 printf("\nERROR: exited on signal %d.\n\n",
                        WTERMSIG(info.si_status));
             } else if (info.si_code != CLD_TRAPPED) {
+                fprintf(stderr, "Not killed, dumped, or trapped.\n");
                 abort();
             }
         }

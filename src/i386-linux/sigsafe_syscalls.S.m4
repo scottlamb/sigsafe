@@ -7,6 +7,9 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 
+#undef __NR_select
+#define __NR_select __NR__newselect
+
 /*
  * int 0x80 form of syscall:
  * register  kernel syscall expectation          gcc return expectation
@@ -29,10 +32,10 @@ define(POPARGS_1, [dnl
 define(POPARGS_2, [POPARGS_1])
 define(POPARGS_3, [POPARGS_2])
 define(POPARGS_4, [dnl
-        pop     %edi
+        pop     %esi
 POPARGS_3])
 define(POPARGS_5, [dnl
-        pop     %esi
+        pop     %edi
 POPARGS_4])
 
 define(SYSCALL, [
@@ -66,17 +69,20 @@ ifelse($2, 3, [dnl
         movl    0x08(%ebx),%ebx
 ], [])dnl
 ifelse($2, 4, [dnl
-        movl    0x14(%ebx),%esi
-        movl    0x10(%ebx),%edx
-        movl    0x0c(%ebx),%ecx
-        movl    0x08(%ebx),%ebx
+        movl    0x18(%ebx),%esi
+        movl    0x14(%ebx),%edx
+        movl    0x10(%ebx),%ecx
+        movl    0x0c(%ebx),%ebx
+        /* 0x08(%ebx) contains our saved %esi */
 ], [])dnl
 ifelse($2, 5, [dnl
-        movl    0x18(%ebx),%edi
-        movl    0x14(%ebx),%edi
-        movl    0x10(%ebx),%edx
-        movl    0x0c(%ebx),%ecx
-        movl    0x08(%ebx),%ebx
+        movl    0x20(%ebx),%edi
+        movl    0x1c(%ebx),%esi
+        movl    0x18(%ebx),%edx
+        movl    0x14(%ebx),%ecx
+        movl    0x10(%ebx),%ebx
+        /* 0x0c(%ebx) contains our saved %edi */
+        /* 0x08(%ebx) contains our saved %esi */
 ], [])])dnl
         testl   %eax,%eax
         je      L_sigsafe_$1_nocompare

@@ -58,8 +58,10 @@ enum run_result do_install_safe(void*);
 /*@{*/
 void* create_pipe(void);
 void cleanup_pipe(void*);
+void do_sigsafe_select_read_child_setup(void*);
 
 enum run_result do_sigsafe_read(void*);
+enum run_result do_sigsafe_select_read(void*);
 enum run_result do_racebefore_read(void*);
 enum run_result do_raceafter_read(void*);
 void nudge_read(void*);
