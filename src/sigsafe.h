@@ -10,9 +10,14 @@
 #ifndef ORG_SLAMB_SIGSAFE_H
 #define ORG_SLAMB_SIGSAFE_H
 
-#include <pthread.h>
+#ifdef __NetBSD__
+#define SIGSAFE_NO_SIGINFO
+#endif
+
 #include <signal.h>
+#ifndef SIGSAFE_NO_SIGINFO
 #include <ucontext.h>
+#endif
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/resource.h>
@@ -52,7 +57,11 @@ extern "C" {
  * @see sigsafe_install_handler
  * @ingroup sigsafe_control
  */
+#ifdef SIGSAFE_NO_SIGINFO
+typedef void (*sigsafe_user_handler_t)(int, int, struct siginfo*, intptr_t);
+#else
 typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
+#endif
 
 /**
  * Installs a safe signal handler.
@@ -275,10 +284,13 @@ struct sigsafe_syscall {
 
 extern struct sigsafe_syscall sigsafe_syscalls[];
 
-extern pthread_key_t sigsafe_key;
 extern sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
+#ifdef SIGSAFE_NO_SIGINFO
+void sighandler_for_platform(struct sigcontext *ctx);
+#else
 void sighandler_for_platform(ucontext_t *ctx);
+#endif
 
 /* socketcall is on Linux; it can't hurt elsewhere to declare it here */
 int sigsafe_socketcall(int call, unsigned long *args);

@@ -55,7 +55,11 @@ enum {
 #define USECS_BETWEEN_SIGNALS 10000
 #define USECS_BETWEEN_WRITES  500
 
+#ifdef SIGSAFE_NO_SIGINFO
+void sigusr1handler(int signo, int code, struct sigcontext *ctx, intptr_t d) {
+#else
 void sigusr1handler(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t baton) {
+#endif
     write(1, ".", 1);
 }
 

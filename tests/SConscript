@@ -6,7 +6,7 @@
 Import('env os_name')
 
 SConscript('platform_behavior/SConscript')
-if os_name != 'freebsd':
+if os_name != 'freebsd' and os_name != 'netbsd':
     SConscript('race_checker/SConscript')
 
 env = env.Copy()

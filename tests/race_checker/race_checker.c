@@ -36,7 +36,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <errno.h>
-#include <pthread.h>
 #include <setjmp.h>
 #include "race_checker.h"
 
@@ -47,17 +46,14 @@ int quick_mode;
 
 int error_wrap(int retval, const char *funcname, enum error_return_type type) {
     if (type == ERRNO && retval < 0) {
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
         abort();
     } else if (type == DIRECT && retval != 0) {
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
         fprintf(stderr, "%s returned %d (%s)\n",
                 funcname, retval, strerror(retval));
         abort();
     } else if (type == NEGATIVE && retval < 0) {
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
         fprintf(stderr, "%s returned %d (%s)\n",
                 funcname, retval, strerror(-retval));
         abort();

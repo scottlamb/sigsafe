@@ -9,7 +9,9 @@
 
 #define ORG_SLAMB_SIGSAFE_INTERNAL
 #include <sigsafe.h>
+#ifdef _THREAD_SAFE
 #include <pthread.h>
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -40,7 +42,11 @@ struct sigsafe_syscall sigsafe_syscalls[] = {
 };
 #undef SYSCALL
 
+#ifdef SIGSAFE_NO_SIGINFO
+static void sighandler(int signum, int code, struct siginfo *ctx) {
+#else
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
+#endif
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd *sigsafe_data = pthread_getspecific(sigsafe_key);
 #endif
@@ -50,7 +56,13 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 #endif
     if (sigsafe_data != NULL) {
         if (user_handlers[signum - 1] != NULL) {
-            user_handlers[signum - 1](signum, siginfo, ctx, sigsafe_data->user_data);
+#ifdef SIGSAFE_NO_SIGINFO
+            user_handlers[signum - 1](signum, code, ctx,
+                                      sigsafe_data->user_data);
+#else
+            user_handlers[signum - 1](signum, siginfo, ctx,
+                                      sigsafe_data->user_data);
+#endif
         }
         sigsafe_data->signal_received = 1;
         sighandler_for_platform(ctx);
@@ -107,8 +119,13 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     }
 #endif
     user_handlers[signum - 1] = handler;
+#ifdef SIGSAFE_NO_SIGINFO
+    sa.sa_handler = (void (*)(int)) &sighandler;
+    sa.sa_flags = SA_RESTART;
+#else
     sa.sa_sigaction = (void*) &sighandler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
+#endif
 
     /*
      * Mask all signals to ensure a sigsafe handler never interrupts another.

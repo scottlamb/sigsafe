@@ -68,7 +68,11 @@ int error_wrap(int retval, const char *funcname, enum error_return_type type) {
     return retval;
 }
 
+#ifdef SIGSAFE_NO_SIGINFO
+void sigusr1handler(int signo, int code, struct sigcontext *ctx, intptr_t d) {
+#else
 void sigusr1handler(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t baton) {
+#endif
     write(1, ".", 1);
 }
 
