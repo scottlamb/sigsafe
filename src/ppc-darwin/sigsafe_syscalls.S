@@ -1,0 +1,63 @@
+/*
+ * $Id$
+ * Copyright (C) 2004 Scott Lamb <slamb@slamb.org>.
+ * This file is part of sigsafe, which is released under the MIT license.
+ */
+
+#import <architecture/ppc/asm_help.h>
+#import <architecture/ppc/pseudo_inst.h>
+#import <sys/syscall.h>
+
+#define EINTR 4 /* from /usr/include/sys/errno.h */
+
+.reference _sigsafe_key
+NON_LAZY_STUB(_sigsafe_key)
+NON_LAZY_STUB(_pthread_getspecific)
+
+#define SYSCALL(name,args)                                                   \
+NESTED(_sigsafe_##name, 0, 1, 0, 0)                                         @\
+        SAVERESTORE_ARGS_##args(stw)                                        @\
+        PICIFY(_sigsafe_key)                 /* retrieve TSD */             @\
+        lwz     r3,0(PICIFY_REG)                                            @\
+        CALL_EXTERN_AGAIN(_pthread_getspecific)                             @\
+        mr      r10,r3                                                      @\
+        SAVERESTORE_ARGS_##args(lwz)                                        @\
+        li      r0,SYS_##name                                               @\
+        cmpwi   r10,0                        /* check TSD pointer */        @\
+        beq     __sigsafe_##name##_maxjmp                                   @\
+LABEL(__sigsafe_##name##_minjmp)                                            @\
+        lwz     r10,0(r10)                   /* check TSD value */          @\
+        cmpwi   r10,0                                                       @\
+        bne     __sigsafe_##name##_jmpto                                    @\
+LABEL(__sigsafe_##name##_maxjmp)                                            @\
+        sc                                                                  @\
+        neg     r3,r3                        /* executed only on error */   @\
+        RETURN                                                              @\
+LABEL(__sigsafe_##name##_jmpto)                                             @\
+        li      r3,-EINTR                                                   @\
+        RETURN
+
+/**
+ * Saves and restores our arguments before/after the call to
+ * pthread_getspecific, which may clobber them.
+ */
+/*@{*/
+#define SAVERESTORE_ARGS_0(func)
+#define SAVERESTORE_ARGS_1(func)                                            @\
+        func    r3, ARG_IN(1)(r1)
+#define SAVERESTORE_ARGS_2(func)                                            @\
+        SAVERESTORE_ARGS_1(func)                                            @\
+        func    r4, ARG_IN(2)(r1)
+#define SAVERESTORE_ARGS_3(func)                                            @\
+        SAVERESTORE_ARGS_2(func)                                            @\
+        func    r5, ARG_IN(3)(r1)
+#define SAVERESTORE_ARGS_4(func)                                            @\
+        SAVERESTORE_ARGS_3(func)                                            @\
+        func    r6, ARG_IN(4)(r1)
+#define SAVERESTORE_ARGS_5(func)                                            @\
+        func    r7, ARG_IN(5)(r1)
+#define SAVERESTORE_ARGS_6(func)                                            @\
+        func    r8, ARG_IN(6)(r1)
+/*@}*/
+
+#include "syscalls.h"

@@ -17,7 +17,7 @@ type = 'debug'
 buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
 
 env = Environment(
-    M4FLAGS = '', # FreeBSD's m4 does not like the -E flag
+    CPP = 'cpp3',
     CPPPATH = [
         '#/src',
         '#/src/' + arch + '-' + os_name

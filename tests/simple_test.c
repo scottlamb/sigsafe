@@ -10,13 +10,16 @@
 #include <stdio.h>
 #include <sigsafe.h>
 #include <string.h>
+#include <assert.h>
 
 int main(void) {
     char buf[42];
     int retval;
 
-    sigsafe_install_handler(SIGUSR1, NULL);
-    sigsafe_install_tsd(0, NULL);
+    retval = sigsafe_install_handler(SIGUSR1, NULL);
+    assert(retval == 0);
+    retval = sigsafe_install_tsd(0, NULL);
+    assert(retval == 0);
     /*raise(SIGUSR1);*/
     memset(buf, 0, sizeof buf);
     retval = sigsafe_read(0, buf, sizeof(buf)-1);
