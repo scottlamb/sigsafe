@@ -29,6 +29,7 @@ static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
         PRIVATE_DEF(void sigsafe_##name##_minjmp_(void)); \
         PRIVATE_DEF(void sigsafe_##name##_maxjmp_(void)); \
         PRIVATE_DEF(void sigsafe_##name##_jmpto_ (void));
+#define MACH_SYSCALL(name, args) SYSCALL(name, args)
 #include "syscalls.h"
 #undef SYSCALL
 
@@ -41,6 +42,7 @@ PRIVATE_DEC(struct sigsafe_syscall_ sigsafe_syscalls_[]) = {
     { NULL, NULL, NULL }
 };
 #undef SYSCALL
+#undef MACH_SYSCALL
 
 #ifdef SIGSAFE_NO_SIGINFO
 static void sighandler(int signum, int code, struct sigcontext *ctx) {
