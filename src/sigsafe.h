@@ -52,6 +52,42 @@ extern "C" {
 
 /**
  * User-specified handler type.
+ * Arguments:
+ * - <tt>int signo</tt>: The signal number received.
+ * - <tt>siginfo_t *si</tt>: The signal information as passed to a
+ *   sigaction-style signal handler.
+ * - <tt>ucontext_t *ctx</tt>: The machine context of the program when
+ *   the signal was received. After the user-defined handler exits, the
+ *   platform-specific handler will kick in. It will decide if it is currently
+ *   executing in a "jump region" of a sigsafe system call and adjust the
+ *   instruction pointer if so. While <tt>ctx</tt> is not marked
+ *   <tt>const</tt>, you should be very cautious modifying it. Your code will
+ *   be non-portable, and you may interfere with sigsafe's operation. In fact,
+ *   normally you will not need to even read this parameter.
+ * - intptr_t user_data. The data you passed to sigsafe_install_tsd() in this
+ *   thread.
+ *
+ * @warning
+ * This handler is executed asynchronously. You must take care to only call
+ * async signal-safe functions. In fact, the entire point of sigsafe is to
+ * allow you to do very little here and handle the rest in the main program.
+ * It's recommended that you only note details about the signal here, not take
+ * any action.
+ *
+ * @par Portability:
+ * Unfortunately, NetBSD does not support sigaction, as of the latest released
+ * version (1.6.2). Thus, it has a different signature:
+ * - <tt>int signo</tt>
+ * - <tt>int code</tt> - similar to si->si_code with the standard handler
+ * - <tt>struct sigcontext *ctx</tt> - similar to the standard handler's ctx.
+ * - <tt>intptr_t user_data</tt>
+ * Currently, you will need to use <tt>#ifdef SIGSAFE_NO_SIGINFO</tt> if you
+ * wish to support NetBSD.
+ *
+ * @par Future releases:
+ * I may change the API to have "simple" and "extended" versions of user
+ * handlers, so that simple ones do not need to worry about these platform
+ * differences.
  * @see sigsafe_install_handler
  */
 #ifdef SIGSAFE_NO_SIGINFO
@@ -74,7 +110,8 @@ typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
  *                more than copy whatever data from the <tt>siginfo_t*</tt>
  *                structure to the user-supplied location. This is allowed
  *                since <tt>sigsafe</tt> itself only notes that a signal has
- *                arrived, not even the signal number.
+ *                arrived, not even the signal number. May be NULL, in which
+ *                case sigsafe simply notes that a signal was received.
  * @return 0 on success; <tt>-EINVAL</tt> where <tt>sigaction(2)</tt> would
  *         return -1 and set errno to <tt>EINVAL</tt>.
  * @note
@@ -218,7 +255,7 @@ int sigsafe_select(int nfds, fd_set *readfds, fd_set *writefds,
  * Signal-safe <tt>poll(2)</tt>.
  * @par Availability:
  * All supported systems except Darwin/OS X.
- * (The <tt>poll(2)</tt> system call on Drawin is emulated with
+ * (The <tt>poll(2)</tt> system call on Darwin is emulated with
  * <tt>select(2)</tt>.)
  */
 #if defined(SIGSAFE_HAVE_POLL) || defined(DOXYGEN)
@@ -238,7 +275,12 @@ int sigsafe_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
 int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
                     socklen_t addrlen);
 
-/** Signal-safe <tt>nanosleep(2)</tt>. */
+/**
+ * Signal-safe <tt>nanosleep(2)</tt>.
+ * @par Availability:
+ * Currently not implemented on Tru64/alpha or Darwin/ppc. I expect it will be
+ * in a future release.
+ */
 int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 /*@}*/
