@@ -25,17 +25,19 @@ NESTED(_sigsafe_##name, 0, 1, 0, 0)                                         @\
         li      r0,SYS_##name                                               @\
         cmpwi   r10,0                        /* check TSD pointer */        @\
         beq     _sigsafe_##name##_maxjmp_                                   @\
-LABEL(_sigsafe_##name##_minjmp_)                                            @\
+HIDDEN(_sigsafe_##name##_minjmp_)                                           @\
         lwz     r10,0(r10)                   /* check TSD value */          @\
         cmpwi   r10,0                                                       @\
         bne     _sigsafe_##name##_jmpto_                                    @\
-LABEL(_sigsafe_##name##_maxjmp_)                                            @\
+HIDDEN(_sigsafe_##name##_maxjmp_)                                           @\
         sc                                                                  @\
         neg     r3,r3                        /* executed only on error */   @\
         RETURN                                                              @\
-LABEL(_sigsafe_##name##_jmpto_)                                             @\
+HIDDEN(_sigsafe_##name##_jmpto_)                                            @\
         li      r3,-EINTR                                                   @\
         RETURN
+
+#define HIDDEN(label) .private_extern label @ label:
 
 #ifdef _THREAD_SAFE
 #define LOAD_TSD(args)                                                       \
