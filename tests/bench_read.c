@@ -13,6 +13,13 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <fcntl.h>
+
+/*
+ * FreeBSD's FD_ZERO uses bzero() but sys/select.h does not include string.h.
+ * Workaround.
+ */
+#include <string.h>
+
 #include <sys/select.h>
 #ifdef DO_SAFE
 #include <sigsafe.h>

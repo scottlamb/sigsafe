@@ -1,17 +1,24 @@
 $Id$
 
-sigsafe version 0.1.2 release notes:
+sigsafe version 0.1.3-dev release notes:
+
+* Linux/i386 and Linux/alpha appear to be working perfectly.
 
 * The FreeBSD/x86 support is preliminary:
 
-  - It doesn't like FreeBSD 4.8's -pthread argument to link with a user
-    threading package, and I don't ever intend to try supporting it.
-    (Symptoms: simple_test will return EAGAIN if no input is available when it
-    does the read.) I'd like to hear about successes or failures with
-    LinuxThreads on FreeBSD 4.* or KSEs on FreeBSD 5.*.
+  - With LinuxThreads, sigaction returns -1/EINVAL in sigsafe_install_handler.
+    No handler is installed. Not sure why.
 
-  - The race condition checker doesn't work here, either. No si_code
-    constants; probably not too hard to fix, but I haven't yet.
+  - I don't have access to a machine with FreeBSD 5.X and a KSE-based pthread
+    library. I'd like to hear reports of success or failure from people who
+    do.
+
+  - Don't use it with user thread libraries (-pthread under FreeBSD 4.X).
+    sigsafe does not support them and never will. (Symptoms: simple_test will
+    return EAGAIN if no input is available when it does the read.)
+
+  - The race condition checker doesn't compile. No si_code constants; probably
+    not too hard to fix, but I haven't yet.
 
 * The documentation is improved, but it still has a ways to go:
 

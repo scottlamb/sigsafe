@@ -19,7 +19,7 @@ LABEL(sigsafe_##name)                                                   ;\
         pop     %ecx /* discarded */                                    ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-LABEL(sigsafe_##name)                                                   ;\
+LABEL(_sigsafe_##name##_minjmp)                                         ;\
         cmp     $0,(%eax)                                               ;\
         jne     _sigsafe_##name##_jmpto                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\

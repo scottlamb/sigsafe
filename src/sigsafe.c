@@ -82,6 +82,11 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     sa.sa_sigaction = (void*) &sighandler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
+    /*
+     * Mask all signals to ensure a sigsafe handler never interrupts another.
+     */
+    sigfillset(&sa.sa_mask);
+
     if (sigaction(signum, &sa, NULL) != 0) {
         return -errno;
     }

@@ -32,8 +32,18 @@ env = Environment(
 )
 
 if os_name == 'freebsd':
-    env.Append(CCFLAGS = ['-pthread'])
-    env.Append(LINKFLAGS = ['-pthread'])
+    if True:
+        # use LinuxThreads
+        env.Append(
+            CPPPATH = ['/usr/local/include/pthread/linuxthreads'],
+            LIBPATH = ['/usr/local/lib'],
+            LIBS = ['lthread'],
+        )
+    else:
+        # use built-in user pthreads
+        # DON'T USE ON 4.X.
+        env.Append(CCFLAGS = ['-pthread'])
+        env.Append(LINKFLAGS = ['-pthread'])
 else:
     env.Append(LIBS = ['pthread'])
 
