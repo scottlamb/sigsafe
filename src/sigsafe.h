@@ -11,9 +11,9 @@
 /**
  * @mainpage sigsafe library for safe signal handling.
  * sigsafe is a C library for safely, reliably, and promptly handling signals
- * delivered to specific threads without significant overhead. Any code which
- * attempts to do this without sigsafe is likely wrong. Please see below for
- * common incorrect patterns and their safe replacement.
+ * delivered to specific threads without significant overhead. This is a
+ * common and challenging problem, and sigsafe can help. Please see below for
+ * examples.
  *
  * sigsafe includes code, documentation, a performance benchmark, and a
  * correctness tester that exhaustively searches for race conditions with
