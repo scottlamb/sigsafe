@@ -38,15 +38,15 @@ int error_wrap(int retval, const char *funcname) {
 
 volatile sig_atomic_t sigalrm_received;
 
-void sigalrm_handler(int signum) { sigalrm_received = 1; }
+void note_sigalrm (int signum) { sigalrm_received = 1; }
 
 int main(void) {
-    sigset_t alrm_set;
+    sigset_t alrm_set, pending_set;
     struct timespec ts;
     int retval;
 
     /* Handle SIGALRM */
-    signal(SIGALRM, &sigalrm_handler);
+   signal(SIGALRM, &note_sigalrm);
 
     /* Block SIGALRM */
     error_wrap(sigemptyset(&alrm_set), "sigemptyset");
@@ -61,6 +61,14 @@ int main(void) {
     ts.tv_nsec = 0;
     while ((retval = nanosleep(&ts, &ts)) == -1 && errno == EINTR) ;
     error_wrap(retval, "nanosleep");
+
+    error_wrap(sigpending(&pending_set), "sigpending");
+    if (sigismember(&pending_set, SIGALRM)) {
+        printf("SIGALRM pending; good.\n");
+    } else {
+        printf("SIGALRM not pending?!?\n");
+        return 1;
+    }
 
     /*
      * Unblock the signal, allowing delivery. SUSv3 says:
@@ -81,4 +89,6 @@ int main(void) {
         printf("SIGALRM was lost.\n");
         return 1;
     }
+
+    return 0;
 }

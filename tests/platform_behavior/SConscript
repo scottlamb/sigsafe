@@ -7,4 +7,6 @@ SConscript('race_checker/SConscript')
 
 Import('env')
 env = env.Copy()
-env.Program(target = 'test_blocked_alarm', source = 'test_blocked_alarm.c')
+
+for i in ['blocked_alarm', 'setitimer_rounding']:
+    env.Program(target = 'test_' + i, source = 'test_' + i + '.c')
