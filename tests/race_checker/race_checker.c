@@ -267,8 +267,7 @@ enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
     assert(   wait_for_sigchld_info == NULL
            && wait_for_sigchld_event == EVENT_NONE);
     wait_for_sigchld_info = info;
-    retval = sigsuspend(&no_signals);
-    assert(retval == -1 && errno == EINTR);
+    sigsuspend(&no_signals);
     wait_for_sigchld_info = NULL;
     
     if (wait_for_sigchld_event == EVENT_TIMEOUT) {

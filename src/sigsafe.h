@@ -111,7 +111,7 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
 intptr_t sigsafe_clear_received(void);
 
 /**
- * @defgroup sigsafe_syscalls System call wrappers
+ * @defgroup sigsafe_syscalls Signal-safe system call wrappers
  * These are alternate system call wrappers which are guaranteed to return
  * an <tt>EINTR</tt> immediately if a "safe" signal is delivered on or before
  * the transition back to userspace. In particular, they will return

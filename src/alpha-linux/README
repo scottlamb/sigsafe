@@ -1,0 +1,14 @@
+$Id$
+
+- <http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/linux/alpha/sysdep.h?cvsroot=glibc>
+  <http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/alpha/sysdep.h?cvsroot=glibc>
+  glibc's assembly for system calls
+
+- <http://www.fefe.de/dietlibc/>
+  dietlibc - has a bunch of syscalls in raw assembly
+
+- <http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V40E_HTML/APY8ACTE/TITLE.HTM>
+  Calling Standard for Alpha Systems
+
+- <http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V40E_HTML/APS31DTE/TITLE.HTM>
+  Assembly Language Programmer's Guide

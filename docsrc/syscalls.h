@@ -1,7 +1,7 @@
 // $Id$
 
 /**
- * @defgroup syscalls System calls
+ * @defgroup syscalls Standard system calls wrappers
  * These are the "normal" system calls for the platform, either standardized
  * through the Single UNIX Specification version 3 or specific to the
  * platform. The documentation here describes signal behaviors that I've found
@@ -40,7 +40,7 @@ int kill(pid_t pid, int signo);
  * Reads from a file descriptor.
  * A synchronous, thread-directed <tt>SIGPIPE</tt> is delivered during this
  * system call if the opposite end of the pipe is closed. I recommend ignoring
- * this signal, which is worthless. It was implemented solely to be a more
+ * this signal, which is redundant. It was implemented solely to be a more
  * abrupt error to programs that do not check return values carefully. The 0
  * return says the same thing.
  */
@@ -50,7 +50,7 @@ ssize_t read(int fd, void *buf, size_t nbytes);
  * Writes to a file descriptor.
  * A synchronous, thread-directed <tt>SIGPIPE</tt> is delivered during this
  * system call if the opposite end of the pipe is closed. I recommend ignoring
- * this signal, which is worthless. It was implemented solely to be a more
+ * this signal, which is redundant. It was implemented solely to be a more
  * abrupt error to programs that do not check return values carefully. The
  * <tt>EPIPE</tt> error says the same thing.
  */
