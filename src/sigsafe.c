@@ -55,7 +55,22 @@ static void tsd_destructor(void* tsd_v) {
 }
 
 static void sigsafe_init(void) {
+    /* "volatile" so our seemingly-useless references aren't optimized away. */
+    volatile void *fp;
+
     pthread_key_create(&sigsafe_key, &tsd_destructor);
+
+    /*
+     * XXX
+     * bbraun and landorf on #opendarwin tell me that dyld commonly deadlocks
+     * in the signal handlers; it is not reentrant. Workaround: ensure all
+     * symbols we reference in our signal handler are evaluated beforehand.
+     * Should test this and note it in the documentation, so the userhandler
+     * does the same thing.
+     */
+    fp = &pthread_getspecific;
+    fp = &sighandler_for_platform;
+    fp = &abort;
 }
 
 int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
