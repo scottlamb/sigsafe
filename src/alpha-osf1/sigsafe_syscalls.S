@@ -57,13 +57,13 @@ $sigsafe_##name##_nocompare:                                            ;\
 LABEL(sigsafe_##name##_maxjmp_)                                         ;\
         call_pal PAL_callsys                                            ;\
         bne     a3, $sigsafe_##name##_error                             ;\
-        lda     sp, 8+8*args(sp)                                        ;\
+        lda     sp, FRAME_SIZE(args)(sp)                                ;\
         ret     zero, (ra), 1                                           ;\
 LABEL(sigsafe_##name##_jmpto_)                                          ;\
         lda     v0, EINTR(zero)                                         ;\
 $sigsafe_##name##_error:                                                ;\
         negl    v0                                                      ;\
-        lda     sp, 8+8*args(sp)                                        ;\
+        lda     sp, FRAME_SIZE(args)(sp)                                ;\
         ret     zero, (ra), 1                                           ;\
 .end sigsafe_##name
 
@@ -111,6 +111,12 @@ $sigsafe_##name##_error:                                                ;\
 /*@}*/
 
 #ifdef _THREAD_SAFE
+#define FRAME_SIZE(args) 8+8*args
+#else
+#define FRAME_SIZE(args) 8
+#endif
+
+#ifdef _THREAD_SAFE
 #define START(args) \
         .frame  sp,8+8*args,ra                                          ;\
         .mask   SAVEDMASK_##args,-8-8*args                              ;\
@@ -118,8 +124,7 @@ $sigsafe_##name##_error:                                                ;\
         lda     sp,-8-8*args(sp)                                        ;\
         SAVERESTORE_REGS_##args(stq)                                    ;\
         .prologue 1                                                     ;\
-        lda     t0, sigsafe_key_                                        ;\
-        ldl     a0, 0(t0)                                               ;\
+        ldl     a0, sigsafe_key_                                        ;\
         jsr     ra,__pthread_getspecific                                ;\
         ldgp    gp,0(ra)                                                ;\
         SAVERESTORE_REGS_##args(ldq)
@@ -130,7 +135,7 @@ $sigsafe_##name##_error:                                                ;\
         ldgp    gp,0(pv)                                                ;\
         lda     sp,-8(sp)                                               ;\
         .prologue 1                                                     ;\
-        lda     v0, sigsafe_data_
+        ldq     v0, sigsafe_data_
 #endif
 
 #include "syscalls.h"
