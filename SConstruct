@@ -5,13 +5,14 @@
 
 import os
 import re
+import string
 
 # Determine our platform
 arch = os.uname()[4]
 if arch == 'Power Macintosh': arch = 'ppc'
 if re.compile('i[3456]86').match(arch): arch = 'i386'
 Export('arch')
-os_name = os.uname()[0].lower().replace('-','')
+os_name = string.replace(string.lower(os.uname()[0]),'-','')
 Export('os_name')
 type = 'debug'
 buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
