@@ -96,7 +96,10 @@ int sigsafe_install_handler(int signum,
     user_handlers[signum] = handler;
     sa.sa_sigaction = (void*) &sighandler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    return sigaction(signum, &sa, NULL);
+    if (sigaction(signum, &sa, NULL) != 0) {
+        return -errno;
+    }
+    return 0;
 }
 
 int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
@@ -107,8 +110,7 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
 
     tsd = (struct sigsafe_tsd*) malloc(sizeof(struct sigsafe_tsd));
     if (tsd == NULL) {
-        errno = ENOMEM;
-        return -1;
+        return -ENOMEM;
     }
 
     tsd->signal_received = 0;
@@ -118,8 +120,7 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     retval = pthread_setspecific(sigsafe_key, tsd);
     if (retval != 0) {
         free(tsd);
-        errno = retval;
-        return -1;
+        return -retval;
     }
 
     return 0;
