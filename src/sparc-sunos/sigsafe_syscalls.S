@@ -12,7 +12,7 @@
 #ifdef _THREAD_SAFE
 .comm sigsafe_key, 4
 #else
-.comm sigsafe_data, 4
+.comm sigsafe_data, 12
 #endif
 
 /*

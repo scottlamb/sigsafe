@@ -8,9 +8,9 @@
 #include <asm/errno.h>
 
 #ifdef _THREAD_SAFE
-.comm sigsafe_key,8
+.comm sigsafe_key,4
 #else
-.comm sigsafe_data,8
+.comm sigsafe_data,24
 #endif
 
 #define SYSCALL(name, args)                                             ;\
