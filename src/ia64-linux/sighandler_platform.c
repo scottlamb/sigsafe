@@ -16,11 +16,24 @@ void sigsafe_handler_for_platform_(ucontext_t *ctx) {
     void *ip;
     ip = (void*) ctx->uc_mcontext.sc_ip;
     for (s = sigsafe_syscalls_; s->minjmp != NULL; s++) {
-        if (s->minjmp <= ip && ip <= s->maxjmp) {
+        /*
+         * XXX
+         *
+         * There are two funny things about the next lines:
+         * - the extra dereference; why? function pointers on ia64 are just
+         *   like this?
+         * - the "+ 1" in the maxjmp. It's clearly something to do with how
+         *   the break.i instruction is bundled, but I don't completely get
+         *   it.
+         */
+        void *minjmp = * (void**) s->minjmp;
+        void *maxjmp = * (void**) s->maxjmp + 1;
+        void *jmpto  = * (void**) s->jmpto;
+        if (minjmp <= ip && ip <= maxjmp) {
 #ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);
 #endif
-            ctx->uc_mcontext.sc_ip = (unsigned long) s->jmpto;
+            ctx->uc_mcontext.sc_ip = (unsigned long) jmpto;
             return;
         }
     }

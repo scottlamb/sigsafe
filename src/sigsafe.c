@@ -26,9 +26,9 @@ static int sigsafe_inited;
 static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
-        extern const void *sigsafe_##name##_minjmp_(void) PRIVATE; \
-        extern const void *sigsafe_##name##_maxjmp_(void) PRIVATE; \
-        extern const void *sigsafe_##name##_jmpto_ (void) PRIVATE;
+        extern void sigsafe_##name##_minjmp_(void) PRIVATE; \
+        extern void sigsafe_##name##_maxjmp_(void) PRIVATE; \
+        extern void sigsafe_##name##_jmpto_ (void) PRIVATE;
 #include "syscalls.h"
 #undef SYSCALL
 
