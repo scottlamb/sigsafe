@@ -1,4 +1,7 @@
-/* $Id$ */
+/*
+ * $Id$
+ * Compile with: gcc test.s -o test
+ */
 
 .globl _main
 .text
@@ -13,4 +16,4 @@ li      r3, 1           ;  code execution resumes here
 li      r0, 1           ;  code execution resumes here
                         ;  if setuid(0) was a success.
                         ;  syscall for exit = 1sc
-                        ;  system call exit(r3)
+sc                      ;  system call exit(r3)
