@@ -10,7 +10,7 @@
 /*
  * __NR_select actually refers to an older version that takes a structure.
  * We want the not-obsolete one.
- /
+ */
 #undef __NR_select
 #define __NR_select __NR__newselect
 
@@ -43,6 +43,7 @@ LABEL(sigsafe_##name)                                                   ;\
         call    pthread_getspecific                                     ;\
         pop     %ecx /* not used */                                     ;\
         SAVE_REGS_##args                                                ;\
+        COPY_STACK_PTR_##args                                           ;\
         SETUP_ARGS_##args                                               ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
@@ -91,10 +92,8 @@ label:
 
 #define RESTORE_REGS_0
 #define RESTORE_REGS_1                                                      ;\
-        pop %ebx                                                            ;\
-        RESTORE_REGS_0
-#define RESTORE_REGS_2 _RESTORE_REGS_2
-#define _RESTORE_REGS_2                                                     ;\
+        pop %ebx
+#define RESTORE_REGS_2                                                      ;\
         /* %ecx we may clobber */                                           ;\
         RESTORE_REGS_1
 #define RESTORE_REGS_3                                                      ;\
@@ -107,32 +106,49 @@ label:
         pop %edi                                                            ;\
         RESTORE_REGS_4
 
-/*
- * SETUP_ARGS_##nargs puts the arguments into the register form the system
- * call expects. SAVE_REGS_##nargs will have just been called.
+/**
+ * Copies the stack pointer to %ebx so we can do math on it.
+ * Not necessary for zero-argument system call.
  */
-#define SETUP_ARGS_0
+/*@{*/
+#define COPY_STACK_PTR_0
+#define COPY_STACK_PTR_1 movl %esp,%ebx
+#define COPY_STACK_PTR_2 COPY_STACK_PTR_1
+#define COPY_STACK_PTR_3 COPY_STACK_PTR_1
+#define COPY_STACK_PTR_4 COPY_STACK_PTR_1
+#define COPY_STACK_PTR_5 COPY_STACK_PTR_1
+/*@}*/
+
+/**
+ * SETUP_ARGS_##nargs puts the arguments into the register form the system
+ * call expects. SAVE_REGS_##nargs and COPY_STACK_PTR_##nargs should have been
+ * called.
+ */
+/*@{*/
+#define SETUP_ARGS_0                                                         \
 #define SETUP_ARGS_1 _SETUP_ARGS_1(0)
-#define _SETUP_ARGS_1(off)                                                  ;\
+#define _SETUP_ARGS_1(off)                                                   \
         movl    0x08+off(%ebx),%ebx                                         ;\
-        /*      0x04+off(%ebx) contains our return address */
+        /*      0x04+off(%ebx) contains our return address */               ;\
+        /*      0x00+off(%ebx) contains our saved %ebx */
 #define SETUP_ARGS_2 _SETUP_ARGS_2(0)
-#define _SETUP_ARGS_2(off)                                                  ;\
+#define _SETUP_ARGS_2(off)                                                   \
         movl    0x0c+off(%ebx),%ecx                                         ;\
         _SETUP_ARGS_1(off)
 #define SETUP_ARGS_3 _SETUP_ARGS_3(0)
-#define _SETUP_ARGS_3(off)                                                  ;\
+#define _SETUP_ARGS_3(off)                                                   \
         movl    0x10+off(%ebx),%edx                                         ;\
         _SETUP_ARGS_2(off)
 #define SETUP_ARGS_4 _SETUP_ARGS_4(0)
-#define _SETUP_ARGS_4(off)                                                  ;\
+#define _SETUP_ARGS_4(off)                                                   \
         movl    0x18+off(%ebx),%esi                                         ;\
         _SETUP_ARGS_3(off+4)                                                ;\
-        /*      0x04+off(%ebx) contains our saved %esi */
+        /*      0x00+off(%ebx) contains our saved %esi */
 #define SETUP_ARGS_5 _SETUP_ARGS_5(0)
-#define _SETUP_ARGS_5(off)                                                  ;\
+#define _SETUP_ARGS_5(off)                                                   \
         movl    0x20(%ebx),%edi                                             ;\
         _SETUP_ARGS_4(off+4)                                                ;\
-        /*      0x04+off(%ebx) contains our saved %edi */
+        /*      0x00+off(%ebx) contains our saved %edi */
+/*@}*/
 
 #include "syscalls.h"

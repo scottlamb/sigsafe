@@ -7,13 +7,9 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define _GNU_SOURCE
 #define ORG_SLAMB_SIGSAFE_INTERNAL
 #include <sigsafe.h>
 #include <ucontext.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 void sighandler_for_platform(ucontext_t *ctx) {
     struct sigsafe_syscall *s;
