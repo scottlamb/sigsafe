@@ -1,0 +1,4 @@
+# vim: ft=python
+# $Id$
+
+SConscript('race_checker/SConscript')

@@ -1,0 +1,10 @@
+# vim: ft=python
+# $Id$
+
+Import('env')
+env = env.Copy()
+env.Prepend(LIBS = ['sigsafe'])
+env.Program(target = 'race_checker', source = [
+    'race_checker.c',
+    'races_io.c',
+])

@@ -1,0 +1,16 @@
+# vim: ft=python
+# $Id$
+
+Import('env')
+Import('arch')
+Import('os_name')
+
+platform_subdir = arch + '-' + os_name
+
+source = [
+    'sigsafe.c',
+    platform_subdir + '/sighandler_platform.c',
+    platform_subdir + '/sigsafe_read.s'
+]
+
+env.StaticLibrary(target = 'unsafe', source = source)
