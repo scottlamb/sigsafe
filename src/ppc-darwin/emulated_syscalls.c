@@ -3,7 +3,9 @@
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.
- * @version     $Id$
+ * sigsafe_nanosleep is derived from Apple libc and thus is under the APSL
+ * 1.1.
+ * @version     $Id: emulated_syscalls.c 773 2004-05-19 13:51:56Z slamb$
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
@@ -25,6 +27,7 @@ PRIVATE_DEF(kern_return_t sigsafe_clock_sleep_trap(
         int                     sleep_nsec,
         mach_timespec_t         *abs_time_after));
 
+/* Derived from Libc/gen/nanosleep.c */
 int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
     kern_return_t ret;
     mach_timespec_t abs_time_after;
