@@ -1,0 +1,35 @@
+Index: Defaults.py
+===================================================================
+RCS file: /cvsroot/scons/scons/src/engine/SCons/Defaults.py,v
+retrieving revision 1.87
+diff -u -r1.87 Defaults.py
+--- Defaults.py	19 Apr 2004 03:43:12 -0000	1.87
++++ Defaults.py	13 May 2004 22:18:00 -0000
+@@ -127,6 +127,8 @@
+ 
+ ASAction = SCons.Action.Action("$ASCOM")
+ ASPPAction = SCons.Action.Action("$ASPPCOM")
++ShASAction = SCons.Action.Action("$ASCOM")
++ShASPPAction = SCons.Action.Action("$ASPPCOM -D__DYNAMIC__")
+ 
+ ProgScan = SCons.Scanner.Prog.ProgScan()
+ 
+Index: Tool/as.py
+===================================================================
+RCS file: /cvsroot/scons/scons/src/engine/SCons/Tool/as.py,v
+retrieving revision 1.4
+diff -u -r1.4 as.py
+--- Tool/as.py	26 Feb 2004 05:53:37 -0000	1.4
++++ Tool/as.py	13 May 2004 22:18:00 -0000
+@@ -54,9 +54,11 @@
+ 
+     for suffix in ASSuffixes:
+         static_obj.add_action(suffix, SCons.Defaults.ASAction)
++        shared_obj.add_action(suffix, SCons.Defaults.ShASAction)
+ 
+     for suffix in ASPPSuffixes:
+         static_obj.add_action(suffix, SCons.Defaults.ASPPAction)
++        shared_obj.add_action(suffix, SCons.Defaults.ShASPPAction)
+ 
+     env['AS']        = env.Detect(assemblers) or 'as'
+     env['ASFLAGS']   = SCons.Util.CLVar('')
