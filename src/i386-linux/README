@@ -2,7 +2,7 @@ Good news - there are lots of places that describe x86 assembly, and Linux
 uses in particular.
 
 - <http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/linux/i386/sysdep.h?cvsroot=glibc>
-  The libc sysdep.h; it has a lengthy comment describing the two ways of
+  The glibc sysdep.h; it has a lengthy comment describing the two ways of
   making a syscall under Linux. (sysenter is apparently much faster when
   available.)
 
@@ -15,3 +15,8 @@ uses in particular.
   This page describes inline assembly syntax. It's probably easiest to do
   stuff in C with inline assembly here (that's what glibc does). Though I'm
   sure I could find plenty of documentation on the function call conventions.
+
+- <http://linuxassembly.org/>
+
+- <http://www.fefe.de/dietlibc/>
+  dietlibc - has a bunch of syscalls in raw assembly
