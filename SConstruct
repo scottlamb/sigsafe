@@ -53,6 +53,10 @@ global_env.Append(
 # each system anyway - to write the assembly code.
 #
 
+if os_name == 'darwin':
+    global_env['SHLINKFLAGS'] = '$LINKFLAGS -dynamiclib -Wl,-x'
+    global_env['SHLIBSUFFIX'] = '.dylib'
+
 if os_name == 'osf1':
     global_env.Append(CPPDEFINES = [
         '_XOPEN_SOURCE=600',     # use socklen_t
@@ -60,7 +64,7 @@ if os_name == 'osf1':
     ])
 
 if global_env['CC'] == 'gcc':
-    global_env.Append(CCFLAGS = ['-Wall'])
+    global_env.Append(CCFLAGS = ['-Wall', '-fno-common'])
 
 if debug:
     global_env.Append(

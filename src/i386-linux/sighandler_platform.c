@@ -12,7 +12,7 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-void sigsafe_handler_for_platform_(ucontext_t *ctx) {
+PRIVATE(void sigsafe_handler_for_platform_(ucontext_t *ctx)) {
     struct sigsafe_syscall_ *s;
     void *eip;
     eip = (void*) ctx->uc_mcontext.gregs[REG_EIP];

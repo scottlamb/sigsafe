@@ -16,19 +16,19 @@
 #include <errno.h>
 
 #ifdef _THREAD_SAFE
-pthread_key_t sigsafe_key_ PRIVATE;
+PRIVATE(pthread_key_t sigsafe_key_) = 0;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 #else
-struct sigsafe_tsd_ *sigsafe_data_ PRIVATE;
+PRIVATE(struct sigsafe_tsd_* sigsafe_data_) = 0;
 static int sigsafe_inited;
 #endif
 
 static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
-        extern void sigsafe_##name##_minjmp_(void) PRIVATE; \
-        extern void sigsafe_##name##_maxjmp_(void) PRIVATE; \
-        extern void sigsafe_##name##_jmpto_ (void) PRIVATE;
+        PRIVATE(void sigsafe_##name##_minjmp_(void)); \
+        PRIVATE(void sigsafe_##name##_maxjmp_(void)); \
+        PRIVATE(void sigsafe_##name##_jmpto_ (void));
 #include "syscalls.h"
 #undef SYSCALL
 
@@ -36,7 +36,7 @@ static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
         { sigsafe_##name##_minjmp_, \
           sigsafe_##name##_maxjmp_, \
           sigsafe_##name##_jmpto_ },
-struct sigsafe_syscall_ sigsafe_syscalls_[] = {
+PRIVATE(struct sigsafe_syscall_ sigsafe_syscalls_[]) = {
 #include "syscalls.h"
     { NULL, NULL, NULL }
 };

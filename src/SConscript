@@ -26,4 +26,4 @@ else:
 
 env.Program(target = 'print_sizes', source = 'print_sizes.c')
 env.StaticLibrary(target = 'sigsafe', source = source)
-#env.SharedLibrary(target = 'sigsafe', source = source)
+env.SharedLibrary(target = 'sigsafe', source = source)

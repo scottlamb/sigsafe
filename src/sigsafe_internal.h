@@ -19,10 +19,12 @@
  * and other good things to know about ELF relocation, symbol versioning, etc.
  */
 
-#if defined(__GNUC__) && defined(PIC)
-#define PRIVATE __attribute__ ((visibility ("hidden")))
+#if defined(__APPLE_CC__)
+#define PRIVATE(sym) __private_extern__ sym
+#elif defined(__GNUC__) && defined(__DYNAMIC__)
+#define PRIVATE(sym) extern sym __attribute__ ((visibility ("hidden")))
 #else
-#define PRIVATE
+#define PRIVATE(sym) extern sym
 #endif
 
 /**
@@ -55,12 +57,12 @@ struct sigsafe_syscall_ {
     const void *jmpto;
 };
 
-extern struct sigsafe_syscall_ sigsafe_syscalls_[] PRIVATE;
+PRIVATE(struct sigsafe_syscall_ sigsafe_syscalls_[]);
 
 #ifdef SIGSAFE_NO_SIGINFO
-void sigsafe_handler_for_platform_(struct sigcontext *ctx) PRIVATE;
+PRIVATE(void sigsafe_handler_for_platform_(struct sigcontext *ctx));
 #else
-void sigsafe_handler_for_platform_(ucontext_t *ctx) PRIVATE;
+PRIVATE(void sigsafe_handler_for_platform_(ucontext_t *ctx));
 #endif
 
 #endif /* !SIGSAFE_INTERNAL_H */

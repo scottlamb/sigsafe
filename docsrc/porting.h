@@ -2,9 +2,6 @@
 
 /**
  * @page porting Porting to a new system
- * This section is not finished. For now, I have a few quick notes in the
- * following sections in the README:
- *
  * <h2>Writing the system-dependent code</h2>
  *
  * <h3>What needs to be written</h3>

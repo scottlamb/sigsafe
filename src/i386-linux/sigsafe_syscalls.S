@@ -59,7 +59,7 @@ HIDDEN(sigsafe_##name##_jmpto_)                                         ;\
         ret                                                             ;\
 .size sigsafe_##name, . - sigsafe_##name
 
-#ifdef PIC
+#ifdef __DYNAMIC__
 #define HIDE(label) .hidden label
 #else
 #define HIDE(label) .global label
