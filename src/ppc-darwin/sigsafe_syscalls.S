@@ -7,6 +7,7 @@
 #import <architecture/ppc/asm_help.h>
 #import <architecture/ppc/pseudo_inst.h>
 #import <sys/syscall.h>
+#import <sigsafe_config.h>
 
 #define EINTR 4 /* from /usr/include/sys/errno.h */
 

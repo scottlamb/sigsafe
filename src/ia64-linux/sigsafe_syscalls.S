@@ -7,6 +7,7 @@
 #define __ASSEMBLY__
 #include <asm/unistd.h>
 #include <asm/errno.h>
+#include <sigsafe_config.h>
 
 #define save_pfs    loc0
 #define save_rp     loc1

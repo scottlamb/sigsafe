@@ -14,6 +14,7 @@
 #define SIGSAFE_NO_SIGINFO
 #endif
 
+#include <sigsafe_config.h>
 #include <signal.h>
 #ifndef SIGSAFE_NO_SIGINFO
 #include <ucontext.h>

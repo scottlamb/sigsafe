@@ -7,6 +7,7 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 #include <alpha/regdef.h>
+#include <sigsafe_config.h>
 
 /*
  * Function call convention:

@@ -5,6 +5,7 @@
  */
 
 #include <sys/syscall.h>
+#include <sigsafe_config.h>
 
 #define EINTR 4 /* from sys/errno.h> */
 

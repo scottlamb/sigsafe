@@ -25,5 +25,7 @@ else:
     source.append(platform_subdir + '/sigsafe_syscalls.S')
 
 env.Program(target = 'print_sizes', source = 'print_sizes.c')
-env.StaticLibrary(target = 'sigsafe', source = source)
-#env.SharedLibrary(target = 'sigsafe', source = source)
+static_lib = env.StaticLibrary(target = 'sigsafe', source = source)
+shared_lib = None
+shared_lib = env.SharedLibrary(target = 'sigsafe', source = source)
+Export('static_lib shared_lib')

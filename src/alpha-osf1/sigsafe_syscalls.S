@@ -7,6 +7,7 @@
 #include <sys/syscall.h>
 #include <alpha/regdef.h>
 #include <alpha/pal.h>
+#include <sigsafe_config.h>
 
 #define EINTR 4 /* from sys/errno.h */
 

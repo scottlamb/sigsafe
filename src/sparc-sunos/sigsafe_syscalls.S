@@ -8,6 +8,7 @@
 #include <sys/trap.h>
 #include <sys/syscall.h>
 #include <sys/errno.h>
+#include <sigsafe_config.h>
 
 /*
  * The tricky things to remember below are:

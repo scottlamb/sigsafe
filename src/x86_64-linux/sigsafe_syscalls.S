@@ -6,6 +6,7 @@
 
 #include <asm/unistd.h>
 #include <asm/errno.h>
+#include <sigsafe_config.h>
 
 #define SYSCALL(name, args)                                             ;\
 .text                                                                   ;\

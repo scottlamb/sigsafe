@@ -6,6 +6,7 @@
 
 #include <asm/unistd.h>
 #include <asm/errno.h>
+#include <sigsafe_config.h>
 
 #ifdef __DYNAMIC__
 #error "This code is position-dependent."
