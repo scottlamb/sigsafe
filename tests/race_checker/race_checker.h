@@ -48,6 +48,8 @@ extern sigjmp_buf env;
 
 void install_safe(void*);
 void install_unsafe(void*);
+
+enum run_result do_install_safe(void*);
 /*@}*/
 
 /**

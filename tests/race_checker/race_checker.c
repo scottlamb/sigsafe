@@ -90,8 +90,31 @@ struct test {
     void (*teardown)(void*);
     enum test_result result;
     enum test_result expected;
+    int in_most;
     int should_run;
 } tests[] = {
+    {
+        /*
+         * Tests that signal delivery is safe before, during, or after
+         * the sigsafe_install_handler / sigsafe_install_tsd sequence.
+         */
+        name:               "install_safe",
+        pre_fork_setup:     NULL,
+        child_setup:        /* Effectively ignoring the signal so the SIGUSR1
+                               doesn't cause it to exit on signal if delivered
+                               before the install_sighandler */
+                            &install_unsafe,
+        instrumented:       &do_install_safe,
+        nudge:              NULL,
+        teardown:           NULL,
+        result:             NOT_RUN,
+        expected:           SUCCESS,
+        in_most:            0 /* this test is _slow_ */
+    },
+    /*
+     * XXX should have a test for dyld deadlock on Darwin
+     * Ensure it fails when the workaround code in sigsafe.c is removed.
+     */
     {
         name:               "sigsafe_read",
         pre_fork_setup:     &create_pipe,
@@ -100,7 +123,8 @@ struct test {
         nudge:              &nudge_read,
         teardown:           &cleanup_pipe,
         result:             NOT_RUN,
-        expected:           SUCCESS
+        expected:           SUCCESS,
+        in_most:            1
     },
     {
         name:               "racebefore_read",
@@ -110,7 +134,8 @@ struct test {
         nudge:              &nudge_read,
         teardown:           &cleanup_pipe,
         result:             NOT_RUN,
-        expected:           IGNORED_SIGNAL
+        expected:           IGNORED_SIGNAL,
+        in_most:            1
     },
     {
         name:               "raceafter_read",
@@ -120,7 +145,8 @@ struct test {
         nudge:              &nudge_read,
         teardown:           &cleanup_pipe,
         result:             NOT_RUN,
-        expected:           FORGOTTEN_RESULT
+        expected:           FORGOTTEN_RESULT,
+        in_most:            1
     },
     {
         name:               NULL,
@@ -130,7 +156,8 @@ struct test {
         nudge:              NULL,
         teardown:           NULL,
         result:             NOT_RUN,
-        expected:           NOT_RUN
+        expected:           NOT_RUN,
+        in_most:            0
     }
 };
 
@@ -299,7 +326,7 @@ void smite_child(pid_t childpid) {
  * @bug There is some <i>ugly</i> code in here.
  */
 enum test_result run_test(const struct test *t) {
-    void *test_data;
+    void *test_data = NULL;
     struct timeval timeout;
     pid_t childpid;
     int num_steps_before_continue = -1,
@@ -312,14 +339,20 @@ enum test_result run_test(const struct test *t) {
 
     printf("Running %s test\n", t->name);
     do {
-        test_data = t->pre_fork_setup();
+        if (t->pre_fork_setup != NULL)
+            test_data = t->pre_fork_setup();
         if ((childpid = error_wrap(fork(), "fork", ERRNO)) == 0) {
             /* Child */
             if (t->child_setup != NULL) {
                 t->child_setup(test_data);
             }
             raise(SIGSTOP); /* a marker for the parent to trace us with */
-            exit((int) t->instrumented(test_data));
+            /*
+             * Using _exit instead of exit to trim the number of instructions
+             * (no atexit handler). If this isn't available somewhere, maybe
+             * I'll switch it to using raise() again instead.
+             */
+            _exit((int) t->instrumented(test_data));
         }
         wait_for_sigchld(&info, NULL);
         assert(info.si_code == CLD_STOPPED);
@@ -338,7 +371,13 @@ enum test_result run_test(const struct test *t) {
                 t->nudge(test_data);
             }
             while (wait_for_sigchld(&info, &timeout) == EVENT_TIMEOUT) {
-                if (syscall_step == -1) {
+                if (t->nudge == NULL) {
+                    printf("\nERROR: Timeout on nudge-free function.\n\n");
+                    smite_child(childpid);
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
+                    return FAILURE;
+                } else if (syscall_step == -1) {
                     printf("Nudge required for instruction %d to complete;"
                            " assumed to be syscall\n", num_steps_so_far+1);
                     syscall_step = num_steps_so_far;
@@ -351,7 +390,8 @@ enum test_result run_test(const struct test *t) {
                     printf("\nERROR: timeout on step %d\n\n",
                            num_steps_so_far);
                     smite_child(childpid);
-                    t->teardown(test_data);
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
                     return FAILURE;
                 }
             }
@@ -360,17 +400,20 @@ enum test_result run_test(const struct test *t) {
                 if (WEXITSTATUS(info.si_status) != NORMAL) {
                     fprintf(stderr,
                             "\nERROR: First run should be a normal exit.\n\n");
-                    t->teardown(test_data);
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
                     return FAILURE;
                 }
                 break;
             } else if (info.si_code == CLD_KILLED || info.si_code == CLD_DUMPED) {
                 printf("\nERROR: Child was killed/dumped from signal.\n\n");
-                t->teardown(test_data);
+                if (t->teardown != NULL)
+                    t->teardown(test_data);
                 return FAILURE;
             } else if (info.si_code == CLD_STOPPED) {
                 printf("\nERROR: Child was stopped?!?\n\n");
-                t->teardown(test_data);
+                if (t->teardown != NULL)
+                    t->teardown(test_data);
                 return FAILURE;
             }
         }
@@ -384,7 +427,8 @@ enum test_result run_test(const struct test *t) {
             if (wait_for_sigchld(&info, &timeout) == EVENT_TIMEOUT) {
                 /* Timeout */
                 smite_child(childpid);
-                t->teardown(test_data);
+                if (t->teardown != NULL)
+                    t->teardown(test_data);
                 if (num_steps_before_continue > syscall_step) {
                     printf("\nERROR: timed out after syscall then signal\n\n");
                     return FAILURE;
@@ -400,12 +444,14 @@ enum test_result run_test(const struct test *t) {
                 if (WEXITSTATUS(info.si_status) == INTERRUPTED
                     && num_steps_before_continue > syscall_step) {
                     printf("\nERROR: Interrupted after syscall\n\n");
-                    t->teardown(test_data);
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
                     return FORGOTTEN_RESULT;
                 } else if (WEXITSTATUS(info.si_status) == NORMAL
                            && num_steps_before_continue < syscall_step) {
                     printf("\nERROR: normal return before syscall\n\n");
-                    t->teardown(test_data);
+                    if (t->teardown != NULL)
+                        t->teardown(test_data);
                     return FAILURE;
                 } else if (WEXITSTATUS(info.si_status) == INTERRUPTED) {
                     /*printf("\nGood; interrupted\n");*/
@@ -423,10 +469,17 @@ enum test_result run_test(const struct test *t) {
             }
         }
         num_steps_before_continue = num_steps_so_far - 1;
-        t->teardown(test_data);
+        if (t->teardown != NULL)
+            t->teardown(test_data);
     } while (   num_steps_before_continue >= 0
              && (!quick_mode ||    num_steps_before_continue
                                 >= syscall_step - QUICK_OFFSET_BEFORE)) ;
+
+    if (syscall_step == -1 && t->nudge != NULL) {
+        printf("\nERROR: No nudge ever required?!?\n\n");
+        return FAILURE;
+    }
+
     printf("\nSuccess\n\n");
     return SUCCESS;
 }
@@ -442,6 +495,9 @@ void help(void) {
     printf("\trace_checker <-l | --list>\n");
     printf("\t    Lists the available tests.\n\n");
 
+    printf("\trace_checker [-q | --quick] <-m | --run-most>\n");
+    printf("\t    Runs most tests (all but the really slow ones).\n\n");
+
     printf("\trace_checker [-q | --quick] <-a | --run-all>\n");
     printf("\t    Runs all tests.\n\n");
 
@@ -455,17 +511,22 @@ void help(void) {
 void list_tests(void) {
     int i;
 
-    printf("%-20s Expected result\n", "Test name");
+    printf("  %-20s Expected result\n", "Test name");
+    for (i = 0; i < 2+20+1+strlen("Expected result"); i++)
+        printf("-");
+    printf("\n");
     for (i = 0; tests[i].name != NULL; i++) {
-        printf("%-20s %s\n",
+        printf("%c %-20s %s\n",
+               tests[i].in_most ? ' ' : '*',
                tests[i].name,
                tests[i].expected == SUCCESS ? "success"
                                             : "failure");
     }
+    printf("\n* - slow test - not included in the 'most tests' set\n");
 }
 
 int main(int argc, char **argv) {
-    int i, run_all = 0, run_specific = 0, unexpected = 0;
+    int i, run_all = 0, run_most = 0, run_specific = 0, unexpected = 0;
 
     setup_for_wait_for_sigchld();
 
@@ -486,6 +547,11 @@ int main(int argc, char **argv) {
                        || strcmp(*argv, "--run-all") == 0
                        || strcmp(*argv, "--all") == 0) {
                 run_all = 1;
+            } else if (   strcmp(*argv, "--run-most-tests") == 0
+                       || strcmp(*argv, "--most-tests") == 0
+                       || strcmp(*argv, "-run-most") == 0
+                       || strcmp(*argv, "--most") == 0) {
+               run_most = 1;
             } else if (   strcmp(*argv, "--quick-mode") == 0
                        || strcmp(*argv, "--quick") == 0) {
                 quick_mode = 1;
@@ -501,6 +567,7 @@ int main(int argc, char **argv) {
                 switch (*argchar) {
                     case 'l': list_tests(); return 0;
                     case 'a': run_all = 1; break;
+                    case 'm': run_most = 1; break;
                     case 'h': help(); return 0;
                     case 'q': quick_mode = 1; break;
                     default:  fprintf(stderr, "Unknown short option '%c'.\n\n",
@@ -525,15 +592,21 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (!run_all && !run_specific) {
+    if (!run_all && !run_most && !run_specific) {
         fprintf(stderr, "No tests given.\n\n");
+        help();
+        return 1;
+    }
+
+    if (run_all + run_most + run_specific > 1) {
+        fprintf(stderr, "Conflicting options about which tests to run.\n\n");
         help();
         return 1;
     }
 
     /* Run all tests */
     for (i = 0; tests[i].name != NULL; i++) {
-        if (tests[i].should_run || run_all) {
+        if (tests[i].should_run || run_all || (run_most && tests[i].in_most)) {
             tests[i].result = run_test(&tests[i]);
         }
     }

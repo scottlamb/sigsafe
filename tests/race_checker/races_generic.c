@@ -35,3 +35,8 @@ void install_unsafe(void *test_data) {
     sa.sa_flags = 0;
     error_wrap(sigaction(SIGUSR1, &sa, NULL), "sigaction", ERRNO);
 }
+
+enum run_result do_install_safe(void *test_data) {
+    install_safe(test_data);
+    return NORMAL;
+}
