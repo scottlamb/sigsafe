@@ -8,5 +8,5 @@ SConscript('race_checker/SConscript')
 Import('env')
 env = env.Copy()
 
-for i in ['blocked_alarm', 'setitimer_rounding']:
+for i in ['blocked_alarm', 'setitimer_rounding', 'socket_timeout']:
     env.Program(target = 'test_' + i, source = 'test_' + i + '.c')
