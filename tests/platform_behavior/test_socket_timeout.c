@@ -18,6 +18,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
@@ -35,12 +36,19 @@ int error_wrap(int retval, const char *funcname) {
     return retval;
 }
 
+double doublify_timeval(const struct timeval *tv) {
+    assert(tv != NULL);
+    return tv->tv_sec + ((double) tv->tv_usec / 1000000.);
+}
+
 int main(void) {
     struct sockaddr_in server_addr;
     int server_addr_len = sizeof(struct sockaddr_in);
     int listen_fd, connected_fd;
     int retval;
-    struct timeval timeout;
+    struct timeval timeout, old_time, new_time;
+    char c;
+    double time_delta;
 
     /*
      * I want TCP sockets rather than UNIX ones. socketpair(2) doesn't support
@@ -54,7 +62,6 @@ int main(void) {
         struct sockaddr_in originating_addr;
         int originating_addr_len = sizeof(struct sockaddr_in);
         int accepted_fd;
-        char c;
 
         /* Accept the connection, wait for it to be closed, then die. */
         accepted_fd = error_wrap(accept(listen_fd,
@@ -81,5 +88,25 @@ int main(void) {
                           sizeof(struct timeval)),
                "setsockopt(..., SO_SNDTIMEO, ...)");
     printf("Good; SO_RCVTIMEO and SO_SNDTIMEO seemed to take.\n");
+
+    error_wrap(gettimeofday(&old_time, NULL), "gettimeofday");
+    retval = read(connected_fd, &c, 1);
+    error_wrap(gettimeofday(&new_time, NULL), "gettimeofday");
+    if (retval == -1 && errno == EAGAIN) {
+        printf("Good; read returned EAGAIN.\n");
+    } else {
+        error_wrap(retval, "read");
+        printf("Bad; read returned success?\n");
+        return 1;
+    }
+    time_delta = doublify_timeval(&new_time) - doublify_timeval(&old_time);
+    if (0.95 <= time_delta && time_delta <= 1.05) {
+        printf("Good; time delta in appropriate range.\n");
+    } else {
+        printf("Bad; time delta is way off (should be 1, is %g).\n",
+               time_delta);
+        return 1;
+    }
+
     return 0;
 }
