@@ -25,3 +25,6 @@ uses in particular.
 
 - <http://www.cs.utexas.edu/users/dahlin/Classes/UGOS/labs/lab2/gcc-calling-notes.pdf>
   Describes gcc calling conventions
+
+- <http://www.netwinder.org/~patb/elf_relocs.html>
+  Describes ELF relocations, particularly with respect to i386.

@@ -7,6 +7,10 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 
+#ifdef __DYNAMIC__
+#error "This code is position-dependent."
+#endif
+
 /*
  * __NR_select actually refers to an older version that takes a structure.
  * We want the not-obsolete one.
