@@ -23,7 +23,8 @@ enum error_return_type {
 int error_wrap(int, const char*, enum error_return_type);
 
 enum run_result {
-    INTERRUPTED,
+    /* skip 0 */
+    INTERRUPTED = 1,
     NORMAL,
     WEIRD
 };
