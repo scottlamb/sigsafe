@@ -243,10 +243,22 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
 int sigsafe_read(int fd, void *buf, size_t count);
 
 /**
+ * Signal-safe <tt>readv(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_readv(int d, const struct iovec *iov, int iovcnt);
+
+/**
  * Signal-safe <tt>write(2)</tt>.
  * @ingroup sigsafe_syscalls
  */
 int sigsafe_write(int fd, const void *buf, size_t count);
+
+/**
+ * Signal-safe <tt>writev(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_writev(int d, const struct iovec *iov, int iovcnt);
 
 /**
  * Signal-safe <tt>epoll_wait(2)</tt>.
@@ -282,6 +294,12 @@ int sigsafe_select(int nfds, fd_set *readfds, fd_set *writefds,
  * @ingroup sigsafe_syscalls
  */
 int sigsafe_poll(struct pollfd *ufds, unsigned int nfds, int timeout);
+
+/**
+ * Signal-safe <tt>wait4(2)</tt>.
+ * @ingroup sigsafe_syscalls
+ */
+int sigsafe_wait4(pid_t wpid, int *status, int options, struct rusage *rusage);
 
 #ifdef ORG_SLAMB_SIGSAFE_INTERNAL
 struct sigsafe_tsd {

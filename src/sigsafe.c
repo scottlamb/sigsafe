@@ -17,15 +17,50 @@ sigsafe_user_handler_t user_handlers[NSIG];
 extern void *sigsafe_read_minjmp;
 extern void *sigsafe_read_maxjmp;
 extern void *sigsafe_read_jmpto;
+extern void *sigsafe_write_minjmp;
+extern void *sigsafe_write_maxjmp;
+extern void *sigsafe_write_jmpto;
+extern void *sigsafe_readv_minjmp;
+extern void *sigsafe_readv_maxjmp;
+extern void *sigsafe_readv_jmpto;
+extern void *sigsafe_writev_minjmp;
+extern void *sigsafe_writev_maxjmp;
+extern void *sigsafe_writev_jmpto;
+#ifdef HAVE_EPOLL_WAIT
+extern void *sigsafe_epoll_wait_minjmp;
+extern void *sigsafe_epoll_wait_maxjmp;
+extern void *sigsafe_epoll_wait_jmpto;
+#endif
+extern void *sigsafe_kevent_minjmp;
+extern void *sigsafe_kevent_maxjmp;
+extern void *sigsafe_kevent_jmpto;
+extern void *sigsafe_select_minjmp;
+extern void *sigsafe_select_maxjmp;
+extern void *sigsafe_select_jmpto;
+#ifdef HAVE_POLL
+extern void *sigsafe_poll_minjmp;
+extern void *sigsafe_poll_maxjmp;
+extern void *sigsafe_poll_jmpto;
+#endif
+extern void *sigsafe_wait4_minjmp;
+extern void *sigsafe_wait4_maxjmp;
+extern void *sigsafe_wait4_jmpto;
 
 struct sigsafe_syscall sigsafe_syscalls[] = {
-    { "read",       &sigsafe_read,       &sigsafe_read_minjmp, &sigsafe_read_maxjmp, &sigsafe_read_jmpto },
-  /*{ "write",      &sigsafe_write,      0, 0 },
-    { "epoll_wait", &sigsafe_epoll_wait, 0, 0 },
-    { "kevent",     &sigsafe_kevent,     0, 0 },
-    { "select",     &sigsafe_select,     0, 0 },
-    { "poll",       &sigsafe_poll,       0, 0 },*/
-    { NULL,         NULL,                NULL, NULL, NULL}
+    { "read",       &sigsafe_read,       &sigsafe_read_minjmp,       &sigsafe_read_maxjmp,       &sigsafe_read_jmpto       },
+    { "readv",      &sigsafe_readv,      &sigsafe_readv_minjmp,      &sigsafe_read_maxjmp,       &sigsafe_read_jmpto       },
+    { "write",      &sigsafe_write,      &sigsafe_write_minjmp,      &sigsafe_write_maxjmp,      &sigsafe_write_jmpto      },
+    { "writev",     &sigsafe_writev,     &sigsafe_writev_minjmp,     &sigsafe_write_maxjmp,      &sigsafe_write_jmpto      },
+#ifdef HAVE_EPOLL_WAIT
+    { "epoll_wait", &sigsafe_epoll_wait, &sigsafe_epoll_wait_minjmp, &sigsafe_epoll_wait_maxjmp, &sigsafe_epoll_wait_jmpto },
+#endif
+    { "kevent",     &sigsafe_kevent,     &sigsafe_kevent_minjmp,     &sigsafe_kevent_maxjmp,     &sigsafe_kevent_maxjmp    },
+    { "select",     &sigsafe_select,     &sigsafe_select_minjmp,     &sigsafe_select_maxjmp,     &sigsafe_select_maxjmp    },
+#ifdef HAVE_POLL
+    { "poll",       &sigsafe_poll,       &sigsafe_poll_minjmp,       &sigsafe_poll_maxjmp,       &sigsafe_poll_jmpto       },
+#endif
+    { "wait4",      &sigsafe_wait4,      &sigsafe_wait4_minjmp,      &sigsafe_wait4_maxjmp,      &sigsafe_wait4_jmpto      },
+    { NULL,         NULL,                NULL,                       NULL,                       NULL                      }
 };
 
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {

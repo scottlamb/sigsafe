@@ -12,19 +12,27 @@ dnl Ignore the next line
 NON_LAZY_STUB(_sigsafe_key)
 NON_LAZY_STUB(_pthread_getspecific)
 
+
 changequote([, ])
+
+  define([forloop],
+       [pushdef([$1], [$2])_forloop([$1], [$2], [$3], [$4])popdef([$1])])dnl
+  define([_forloop],
+       [$4[]ifelse($1, [$3], ,
+            [define([$1], incr($1))_forloop([$1], [$2], [$3], [$4])])])dnl
+
 define(SYSCALL, [
 NESTED(_sigsafe_$1, 0, 1, 0, 0)
-        stw     r3,ARG_IN(1)(r1)
-        stw     r4,ARG_IN(2)(r1)
-        stw     r5,ARG_IN(3)(r1)
+forloop([i], [1], [$2], [define([reg],[r[]eval(i+2)])
+        stw     reg,ARG_IN(i)(r1)])
+
         PICIFY(_sigsafe_key)                ; retrieve TSD
         lwz     r3,0(PICIFY_REG)
         CALL_EXTERN_AGAIN(_pthread_getspecific)
         mr      r10,r3
-        lwz     r3,ARG_IN(1)(r1)
-        lwz     r4,ARG_IN(2)(r1)
-        lwz     r5,ARG_IN(3)(r1)
+forloop([i], [1], [$2], [define([reg],[r[]eval(i+2)])
+        lwz     reg,ARG_IN(i)(r1)])
+
         li      r0,SYS_$1
         cmpwi   r10,0                        ; if TSD is NULL, don't dereference
         beq     _sigsafe_$1_maxjmp
@@ -46,3 +54,6 @@ SYSCALL(read, 3)
 SYSCALL(readv, 3)
 SYSCALL(write, 3)
 SYSCALL(writev, 3)
+SYSCALL(select, 5)
+SYSCALL(kevent, 6)
+SYSCALL(wait4, 4)
