@@ -7,10 +7,12 @@ import os
 import re
 import string
 
-install_dir = '/usr/local'
-install_include_dir = install_dir + '/include'
-install_lib_dir = install_dir + '/lib'
-debug = 1
+
+opts = Options('options.cache')
+opts.AddOptions(
+    BoolOption('debug', 'Compile a debug version', 0),
+    PathOption('install_dir', 'Installation destination', '/usr/local'),
+)
 
 #
 # Determine our platform
@@ -35,9 +37,12 @@ Export('arch os_name')
 global_env = None
 if os_name == 'osf1':
     # gcc doesn't work with pthreads, so force use of the native tools
-    global_env = Environment(tools = ['cc','link','ar','as'])
+    global_env = Environment(tools = ['cc','link','ar','as'], options=opts)
 else:
-    global_env = Environment()
+    global_env = Environment(options = opts)
+
+Help(opts.GenerateHelpText(global_env))
+opts.Save('options.cache', global_env)
 
 global_env.Append(
     CPPPATH = [
@@ -69,7 +74,7 @@ if os_name == 'osf1':
 if global_env['CC'] == 'gcc':
     global_env.Append(CCFLAGS = ['-Wall', '-fno-common'])
 
-if debug:
+if global_env['debug']:
     global_env.Append(
         CPPDEFINES=[
             'SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
@@ -123,6 +128,8 @@ config_header = global_env.ConfigHeader(
     source = Value(defines)
 )
 
+install_include_dir = global_env['install_dir'] + '/include'
+install_lib_dir = global_env['install_dir'] + '/lib'
 install_targets = [
     Install(dir = install_include_dir, source = 'src/sigsafe.h'),
     Install(dir = install_include_dir, source = config_header),
