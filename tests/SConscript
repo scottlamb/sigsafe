@@ -8,7 +8,7 @@ SConscript('race_checker/SConscript')
 
 Import('env')
 env = env.Copy()
-env.Prepend(LIBS = ['sigsafe'])
+env.Prepend(LIBS = ['sigsafe', 'm'])
 
 for i in ['simple_test',
           'test_pipe_bytecount',

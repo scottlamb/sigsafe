@@ -26,6 +26,7 @@
 #include <sigsafe.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -34,8 +35,11 @@ enum {
     WRITE
 } Half;
 
-#define USECS_BETWEEN_SIGNALS 400
-#define USECS_BETWEEN_WRITES 50
+double rand_uniform() { return (double) random() / (double) RAND_MAX; }
+double rand_exponential(double mean) { return -mean * log(rand_uniform()); }
+
+#define USECS_BETWEEN_SIGNALS 10000
+#define USECS_BETWEEN_WRITES 500
 #define BYTES_TO_TRANSFER 268435456/*4294967295u*/
 #define SINGLE_WRITE PIPE_BUF
 #define SINGLE_READ (4*SINGLE_WRITE)
@@ -69,6 +73,8 @@ int main(void) {
     size_t total_sent = 0, total_rcvd = 0;
     size_t lowat;
 
+    srandom(time(NULL));
+
     sigsafe_install_handler(SIGUSR1, &sigusr1handler);
     sigsafe_install_tsd(0, NULL);
 
@@ -87,14 +93,14 @@ int main(void) {
                            min(SINGLE_WRITE, BYTES_TO_TRANSFER - total_sent));
             error_wrap(retval, "write", ERRNO);
             total_sent += retval;
-            usleep(USECS_BETWEEN_WRITES);
+            usleep(rand_exponential(USECS_BETWEEN_WRITES));
         }
         return 0;
     }
 
     if (fork() == 0) { /* signaler */
         while (1) {
-            usleep(USECS_BETWEEN_SIGNALS);
+            usleep(rand_exponential(USECS_BETWEEN_SIGNALS));
             if (kill(parent_pid, SIGUSR1) < 0) {
                 printf("Signaler ending.\n");
                 exit(0);
@@ -112,10 +118,13 @@ int main(void) {
         if (retval == -EINTR) {
             continue;
         }
-        write(1, "#", 1);
         error_wrap(retval, "read", NEGATIVE);
-        if (retval != this_transfer)
-            printf("\nretval: %d\n", retval);
+        if (retval == this_transfer)
+            write(1, "#", 1);
+        else {
+            printf("[%d]", retval);
+            fflush(stdout);
+        }
         total_rcvd += retval;
     }
     return 0;

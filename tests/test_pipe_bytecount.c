@@ -31,6 +31,7 @@
 #include <sigsafe.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -40,21 +41,29 @@ enum {
 } PipeHalf;
 
 /* Write a lot of bytes */
-#define BYTES_TO_TRANSFER 4294967295u
+#define BYTES_TO_TRANSFER (PIPE_BUF<<16)/*4294967295u*/
 
 /* ...in groups of more than PIPE_BUF to maximize the chances of something
  * interesting happening. */
 #define SINGLE_TRANSFER (16*PIPE_BUF)
 
+#define USECS_BETWEEN_SIGNALS 10000
+#define USECS_BETWEEN_WRITES  500
+
 void sigusr1handler(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t baton) {
     write(1, ".", 1);
 }
+
+double rand_uniform(void) { return (double) random() / (double) RAND_MAX; }
+double rand_exponential(double mean) { return -mean*log(rand_uniform()); }
 
 int main(void) {
     int parent_pid;
     int mypipe[2];
     char buffer[SINGLE_TRANSFER];
     size_t total_sent = 0, total_rcvd = 0;
+
+    srand(time(NULL));
 
     sigsafe_install_handler(SIGUSR1, &sigusr1handler);
     sigsafe_install_tsd(0, NULL);
@@ -69,17 +78,18 @@ int main(void) {
                            min(SINGLE_TRANSFER, BYTES_TO_TRANSFER - total_sent));
             assert(retval > 0);
             total_sent += retval;
+            usleep(rand_exponential(USECS_BETWEEN_WRITES));
         }
         return 0;
     }
 
     if (fork() == 0) { /* signaler */
         while (1) {
-            /*usleep(50);*/
             if (kill(parent_pid, SIGUSR1) < 0) {
                 printf("Signaler ending.\n");
                 exit(0);
             }
+            usleep(rand_exponential(USECS_BETWEEN_SIGNALS));
         }
         /* not reached */
     }
@@ -93,10 +103,13 @@ int main(void) {
             sigsafe_clear_received();
             continue;
         }
-        write(1, "#", 1);
-        if (retval != this_transfer)
-            printf("\nretval: %d\n", retval);
         assert(retval > 0);
+        if (retval == this_transfer)
+            write(1, "#", 1);
+        else {
+            printf("[%d]", retval);
+            fflush(stdout);
+        }
         total_rcvd += retval;
     }
     return 0;
