@@ -11,7 +11,4 @@ env.Program(target = 'race_checker', source = [
     'races_generic.c',
     'races_io.c',
     ('trace_%s.c' % (os_name)),
-    #'#/build-ppc-darwin-debug/sigsafe.c',
-    #'#/build-ppc-darwin-debug/ppc-darwin/sighandler_platform.c',
-    #'#/build-ppc-darwin-debug/ppc-darwin/sigsafe_read.S',
 ])

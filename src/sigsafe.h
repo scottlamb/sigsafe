@@ -25,7 +25,160 @@
  * Please look at the <tt>README</tt> file for installation notes and porting
  * hints.
  *
- * <h2>The problem</h2>
+ * <h2>Background</h2>
+ *
+ * (This section is intended to describe what signals are, how they are
+ * useful, and the evolution of mechanisms to handle them safely. If you're
+ * feeling ambitious, you might skip below to the "Signal-handling patterns"
+ * section.)
+ *
+ * On UNIX systems, signals are a common way to receive various types of
+ * events, such as:
+ *
+ * <ul>
+ * <li>special key presses for terminal programs (interrupt, suspend,
+ *     resume)</li>
+ * <li>hangups (closing of a terminal or loss of a connection) for
+ *     terminal programs</li>
+ * <li>configuration file changes for daemons</li>
+ * <li>timeouts, as with <tt>alarm(2)</tt> or <tt>setitimer(2)</tt></li>
+ * <li>child process events (started, stopped, resumed, etc.)</li>
+ * <li>DNS request completion with the <tt>getaddrinfo_a(3)</tt> API.</li>
+ * <li>AIO (asynchronous I/O) completion</li>
+ * <li>termination (graceful or otherwise)</li>
+ * <li>filesystem change notification under Linux with the <tt>F_NOTIFY</tt>
+ *     API.</li>
+ * <li>priority input on a socket.</li>
+ * </ul>
+ *
+ * When a signal arrives, a function is immediately executed and then control
+ * returns to the previously executing function. Signal handlers can be
+ * installed like this:
+ *
+ * @code
+ * #include &lt;signal.h&gt;
+ *
+ * ...
+ *
+ * void sighandler(int signum) {
+ *     printf("Received signal %d\n", signum);
+ * }
+ *
+ * ...
+ *
+ * int main(void) {
+ *     signal(SIGINT, &sighandler);
+ *     signal(SIGUSR1, &sighandler);
+ *     ...
+ *  }
+ *  @endcode
+ *
+ * When a signal arrives, the program will print "Received signal X" and
+ * continue as before.
+ *
+ * ...unless you're unlucky. At many points in a program, it's expected that
+ * data structures don't spontaneously change, as they might in a signal
+ * handler. The <tt>printf(3)</tt> call in that signal handler is such a case.
+ * Internally, it calls <tt>malloc(3)</tt> to allocate memory.
+ * <tt>malloc(3)</tt> is not re-entrant, meaning that it is not safe to start
+ * execution of one instance while another is running, as can happen inside a
+ * signal handler. If this happens, the heap can become corrupted and the
+ * program will crash.
+ *
+ * This is a similar problem to thread safety but arguably much worse.
+ * Threads can obtain locks and wait for other threads to complete critical
+ * sections. But signals occur at any time and complete before the program
+ * resumes normal execution. They can't wait for the main section to complete
+ * a critical section; they need to do their work immediately.
+ *
+ * For this reason, a lot of projects have very restricted signal handlers.
+ * They do little more than noting that a signal has arrived and then exiting.
+ * The code looks something like this:
+ *
+ * @code
+ * int terminate_signal_received;
+ *
+ * void sigtermhandler(int signum) {
+ *     terminate_signal_received = 1;
+ * }
+ *
+ * ...
+ *
+ * int main(void) {
+ *     ... setup work ...
+ *     while (!terminate_signal_received) {
+ *         ... handle events ...
+ *     }
+ *     ... cleanup work ...
+ * }
+ * @endcode
+ *
+ * This code is safer, but there are still problems.
+ *
+ * First, the compiler can optimize the comparison of
+ * <tt>terminate_signal_received</tt> into a register. This makes the program
+ * faster, but it also breaks the signal handling. The main program never sees
+ * the change that the signal handler makes to the value in memory. And the
+ * signal handler certainly doesn't know enough to change the value in the
+ * register.
+ *
+ * The solution to this problem is easy: use the <tt>volatile</tt> keyword.
+ * This tells the compiler that the value of
+ * <tt>terminate_signal_received</tt> can change at any time. Then it always
+ * retrieves it from memory immediately before doing a comparison.
+ *
+ * In general, you should use <tt>volatile sig_atomic_t</tt> values if you are
+ * retrieving or modifying them in signal handlers. The <tt>sig_atomic_t</tt>
+ * type is designed to prevent a more subtle problem called word tearing,
+ * which I will describe later.
+ *
+ * Okay, that's easy enough. But now there's another problem: we only check
+ * the <tt>signal_received</tt> value at each iteration of the loop. What if
+ * we're waiting for an IO event inside the loop? In the shutdown sequence for
+ * many platforms, a daemon only gets 15 or so seconds to gracefully clean up
+ * before it is abruptly terminated. So if the cleanup work is important, the
+ * signal must cause the loop iteration to end quickly.
+ *
+ * Maybe this will help: system calls that wait (block) for events return
+ * with <tt>EINTR</tt> immediately if a signal arrives during their operation.
+ * (To be precise: we can choose if they do so or not when we install the
+ * signal handler.) So we can have code like this:
+ *
+ * @code
+ * while (!signal_received) {
+ *     retval = read(fd, buf, count));
+ *     if (retval >= 0) {
+ *         ... handle IO ...
+ *     } else if (errno != EINTR) {
+ *         ... error ...
+ *     }
+ * }
+ * @endcode
+ *
+ * Now if a signal arrives during the read, we proceed to the cleanup code
+ * immediately. Good.
+ *
+ * But...what if a signal arrives between the
+ * <tt>!terminate_signal_received</tt> test and the <tt>read(2)</tt> system
+ * call? It looks like there's no code there, but there actually is a fair
+ * amount. System call functions aren't magic; they are normal functions that
+ * somewhere in the middle execute an instruction that passes control to
+ * kernel space. There are always going to be instructions between our test of
+ * <tt>signal_received</tt> and the system call really starting.
+ * Unfortunately, the system call does not return <tt>EINTR</tt> in this case.
+ * It doesn't know anything about little boolean, much less whether or not
+ * we've checked it since the last time we received a signal.
+ *
+ * So there's a window of time in which our program will do the wrong thing.
+ * (A race condition.) And it's not as rare as it seems - maybe it is in this
+ * example, but for some programs that receive signals very often, it's
+ * inevitable that a failure will happen, and soon. To solve this race
+ * condition, many people have tried the intricate code patterns below. They
+ * all have their downsides, which I will describe. This is also the project
+ * <tt>sigsafe</tt> hopes to accomplish. I believe it makes it much easier to
+ * write correct signal handling code.
+ *
+ * <h2>Signal handling patterns without sigsafe</h2>
  * This library is designed to replace the following problematic patterns:
  * <ol>
  * <li>Calling async signal-unsafe functions from signal handlers.
