@@ -29,58 +29,45 @@
 #define MYREAD read
 #endif
 
-enum PipeHalf {
-    READ,
-    WRITE
-};
-
 int main(void) {
-    int mypipe[2];
+    int devzero;
     char buffer[PIPE_BUF];
 #ifdef DO_SETJMP
     sigjmp_buf env;
 #endif
     size_t total_transferred = 0;
+#ifdef DO_SELECT
+    int flags;
+#endif
 
 #ifdef DO_SAFE
     sigsafe_install_handler(SIGUSR1, NULL);
     sigsafe_install_tsd(0, NULL);
 #endif
 
-    pipe(mypipe);
-    if (fork() == 0) {
-        /* Child */
-        while (total_transferred < BYTES_TO_TRANSFER) {
-            ssize_t retval = write(mypipe[WRITE], buffer,
-                    min(PIPE_BUF, BYTES_TO_TRANSFER-total_transferred));
-            assert(retval > 0);
-            total_transferred += retval;
-        }
-    } else {
-        /* Parent */
+    devzero = open("/dev/zero", O_RDONLY);
 #ifdef DO_SELECT
-        /* Set to non-blocking */
-        int flags;
-        flags = fcntl(mypipe[READ], F_GETFL);
-        flags |= O_NONBLOCK;
-        fcntl(mypipe[READ], F_SETFL, flags);
+    /* Set to non-blocking */
+    flags = fcntl(devzero, F_GETFL);
+    flags |= O_NONBLOCK;
+    fcntl(devzero, F_SETFL, flags);
 #endif
-        while (total_transferred < BYTES_TO_TRANSFER) {
-            ssize_t retval;
+    while (total_transferred < BYTES_TO_TRANSFER) {
+        ssize_t retval;
 #ifdef DO_SELECT
-            fd_set readset;
-            FD_ZERO(&readset);
-            FD_SET(mypipe[READ], &readset);
-            select(mypipe[READ]+1, &readset, NULL, NULL, NULL);
+        fd_set readset;
+        FD_ZERO(&readset);
+        FD_SET(devzero, &readset);
+        retval = select(devzero+1, &readset, NULL, NULL, NULL);
+        assert(retval == 1);
 #endif
 #ifdef DO_SETJMP
-            sigsetjmp(env, 0);
+        sigsetjmp(env, 0);
 #endif
-            retval = MYREAD(mypipe[READ], buffer,
-                    min(PIPE_BUF, BYTES_TO_TRANSFER - total_transferred));
-            assert(retval > 0);
-            total_transferred += retval;
-        }
+        retval = MYREAD(devzero, buffer,
+                min(PIPE_BUF, BYTES_TO_TRANSFER - total_transferred));
+        assert(retval > 0);
+        total_transferred += retval;
     }
     return 0;
 }
