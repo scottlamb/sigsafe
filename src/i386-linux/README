@@ -20,3 +20,6 @@ uses in particular.
 
 - <http://www.fefe.de/dietlibc/>
   dietlibc - has a bunch of syscalls in raw assembly
+
+- <http://www.cs.utexas.edu/users/dahlin/Classes/UGOS/labs/lab2/gcc-calling-notes.pdf>
+  Describes gcc calling conventions
