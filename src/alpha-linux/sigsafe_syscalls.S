@@ -42,7 +42,7 @@
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
 .ent sigsafe_##name                                                     ;\
-LABEL(sigsafe_##name):                                                  ;\
+LABEL(sigsafe_##name)                                                   ;\
         .frame  sp,8+8*args,ra                                          ;\
         .mask   SAVEDMASK_##args,-8-8*args                              ;\
         ldgp    gp,0(pv)                                                ;\
