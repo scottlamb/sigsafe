@@ -32,6 +32,8 @@
  * feeling ambitious, you might skip below to the "Signal-handling patterns"
  * section.)
  *
+ * <h3>Uses of signals</h3>
+ *
  * On UNIX systems, signals are a common way to receive various types of
  * events, such as:
  *
@@ -51,12 +53,14 @@
  * <li>priority input on a socket.</li>
  * </ul>
  *
+ * <h3>Handling signals, first approach</h3>
+ *
  * When a signal arrives, a function is immediately executed and then control
  * returns to the previously executing function. Signal handlers can be
  * installed like this:
  *
  * @code
- * #include &lt;signal.h&gt;
+ * #include <signal.h>
  *
  * ...
  *
@@ -91,9 +95,13 @@
  * resumes normal execution. They can't wait for the main section to complete
  * a critical section; they need to do their work immediately.
  *
- * For this reason, a lot of projects have very restricted signal handlers.
- * They do little more than noting that a signal has arrived and then exiting.
- * The code looks something like this:
+ * For this reason, a lot of projects use the approach in the next section.
+ *
+ * <h3>Setting a flag</h3>
+ *
+ * We can avoid calling functions unsafely by just setting a flag in our
+ * signal handler and then returning control to the main program. The code
+ * looks something like this:
  *
  * @code
  * int terminate_signal_received;
@@ -166,17 +174,96 @@
  * kernel space. There are always going to be instructions between our test of
  * <tt>signal_received</tt> and the system call really starting.
  * Unfortunately, the system call does not return <tt>EINTR</tt> in this case.
- * It doesn't know anything about little boolean, much less whether or not
+ * It doesn't know anything about our little boolean, much less whether or not
  * we've checked it since the last time we received a signal.
  *
- * So there's a window of time in which our program will do the wrong thing.
- * (A race condition.) And it's not as rare as it seems - maybe it is in this
- * example, but for some programs that receive signals very often, it's
- * inevitable that a failure will happen, and soon. To solve this race
- * condition, many people have tried the intricate code patterns below. They
- * all have their downsides, which I will describe. This is also the project
- * <tt>sigsafe</tt> hopes to accomplish. I believe it makes it much easier to
- * write correct signal handling code.
+ * So <tt>EINTR</tt> does not help us --- there's a race condition. (A window
+ * of time in which our program will do the wrong thing.) And it's not as rare
+ * as it seems - maybe it is in this example, but for some programs that
+ * receive signals very often, it's inevitable that a failure will happen, and
+ * soon. To solve this race condition, many people have tried the intricate
+ * code patterns below. They all have their downsides, which I will describe.
+ * This is also the goal <tt>sigsafe</tt> hopes to accomplish.
+ *
+ * <h3>Jumping out of the signal handler</h3>
+ *
+ * Instead of relying on the system call returning, let's try modifying the
+ * main program's flow of execution. The C library provides the
+ * <tt>sigsetjmp(2)</tt> and <tt>siglongjmp(2)</tt> functions for this
+ * purpose. <tt>sigsetjmp(2)</tt> sets up a jump buffer, and
+ * <tt>siglongjmp(2)</tt> returns to it. So we can do something like this:
+ *
+ * @code
+ * volatile sig_atomic_t terminate_signal_received;
+ * volatile sig_atomic_t jump_is_safe;
+ * sigjmp_buf env;
+ *
+ * void sigtermhandler(int signum) {
+ *     terminate_signal_received = 1;
+ *     if (jump_is_safe) {
+ *         siglongjmp(env, 1);
+ *     }
+ * }
+ *
+ * ...
+ *
+ * while (1) {
+ *     sigsetjmp(env, 1);
+ *     jump_is_safe = 1;
+ *     if (terminate_signal_received) {
+ *         jump_is_safe = 0;
+ *         break;
+ *     }
+ *     retval = read(fd, buf, count);
+ *     jump_is_safe = 0;
+ *     ...
+ * }
+ * @endcode
+ *
+ * Now we're getting into tricky code. Through a lot of care, we've avoided
+ * several races in the code above:
+ *
+ * <ul>
+ * <li>we always check <tt>terminate_signal_received</tt> <i>after</i> setting
+ *     <tt>jump_is_safe</tt> to avoid a race of the same style as before.</li>
+ * <li>we always set <tt>env</tt> immediately <i>before</i> setting
+ *     <tt>jump_is_safe</tt> to avoid a race that could cause an undefined jump.</li>
+ * <li>we never call any async signal-unsafe functions when
+ *     <tt>jump_is_safe</tt> is set.</li>
+ * <li>we are extremely careful to make sure <tt>jump_is_safe</tt> is set to 0
+ *     when leaving this block of code. There are three ways:
+ *     <ol>
+ *     <li>the "normal" path where no signal arrives</li>
+ *     <li>jumping from the signal handler (and of course seeing that
+ *         <tt>terminate_signal_received</tt> is true)</li>
+ *     <li>seeing <tt>terminate_signal_received</tt> became true before we set
+ *         <tt>jump_is_safe</tt>.</li>
+ *     </ol>
+ *     Paths 2 and 3 may seem exactly the same, but we could easily have
+ *     broken 3 by relying on the signal handler to set <tt>jump_is_safe</tt>
+ *     to 0 before exiting.</li>
+ * </ul>
+ *
+ * But with all that work, there's <i>still</i> a race condition. If our
+ * system call completes, there's some time after when an arriving signal
+ * would cause us to take the signal received path. We've received data, but
+ * we don't have any way of knowing that. That's no good - most protocols
+ * don't have a way of asking "did you just say something?" so we need to
+ * reliably handle every read. It could have been something important that we
+ * need to record before shutting down.
+ *
+ * So what can we do? We could set <tt>retval</tt> to some never-returned
+ * value before like -2. Then if it changes, we know the system call has
+ * returned. But that's not reliable. On most platforms, the return value from
+ * a system call is stored in a register. So there's always at least one
+ * instruction in which a signal could arrive without changing
+ * <tt>retval</tt>, and probably many more. <tt>errno</tt> is even worse,
+ * because libc goes through more indirection to store it in thread-specific
+ * data. (Something we'll talk about later when we deal with threading.) So
+ * that doesn't help at all.
+ *
+ * (Watch this space. There are several other solutions to the problem that I
+ * mention below. I intend to describe them in more detail here.)
  *
  * <h2>Signal handling patterns without sigsafe</h2>
  * This library is designed to replace the following problematic patterns:
