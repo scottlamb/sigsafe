@@ -27,6 +27,11 @@
  *   an extra no-op in the delay slot. The two places it will happen are after
  *   a BE when the TSD is null (thus TE is evaluated) or in a BNE's delay slot
  *   (thus, the TE is evaluated only if not taking the branch).
+ *
+ * There is one extraneous instruction here - the move. But to get rid of it,
+ * I would have to put the restore between minjmp and maxjmp. That would make
+ * the signal handler more complicated and different from all the other
+ * platforms. Not worth it.
  */
 
 #define SYSCALL(name,args) \

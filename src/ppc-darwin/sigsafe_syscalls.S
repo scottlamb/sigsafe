@@ -10,18 +10,18 @@
 
 #define EINTR 4 /* from /usr/include/sys/errno.h */
 
+#ifdef _THREAD_SAFE
 .reference _sigsafe_key
 NON_LAZY_STUB(_sigsafe_key)
 NON_LAZY_STUB(_pthread_getspecific)
+#else
+.reference _sigsafe_data
+NON_LAZY_STUB(_sigsafe_data)
+#endif
 
 #define SYSCALL(name,args)                                                   \
 NESTED(_sigsafe_##name, 0, 1, 0, 0)                                         @\
-        SAVERESTORE_ARGS_##args(stw)                                        @\
-        PICIFY(_sigsafe_key)                 /* retrieve TSD */             @\
-        lwz     r3,0(PICIFY_REG)                                            @\
-        CALL_EXTERN_AGAIN(_pthread_getspecific)                             @\
-        mr      r10,r3                                                      @\
-        SAVERESTORE_ARGS_##args(lwz)                                        @\
+        LOAD_TSD(args)                                                      @\
         li      r0,SYS_##name                                               @\
         cmpwi   r10,0                        /* check TSD pointer */        @\
         beq     __sigsafe_##name##_maxjmp                                   @\
@@ -36,6 +36,20 @@ LABEL(__sigsafe_##name##_maxjmp)                                            @\
 LABEL(__sigsafe_##name##_jmpto)                                             @\
         li      r3,-EINTR                                                   @\
         RETURN
+
+#ifdef _THREAD_SAFE
+#define LOAD_TSD(args)                                                       \
+        SAVERESTORE_ARGS_##args(stw)                                        @\
+        PICIFY(_sigsafe_key)                 /* retrieve TSD */             @\
+        lwz     r3,0(PICIFY_REG)                                            @\
+        CALL_EXTERN_AGAIN(_pthread_getspecific)                             @\
+        mr      r10,r3                                                      @\
+        SAVERESTORE_ARGS_##args(lwz)
+#else
+#define LOAD_TSD(args)                                                       \
+        PICIFY(_sigsafe_data)                                               @\
+        lwz     r10,0(PICIFY_REG)
+#endif
 
 /**
  * Saves and restores our arguments before/after the call to

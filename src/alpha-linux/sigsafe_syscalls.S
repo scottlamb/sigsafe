@@ -43,17 +43,7 @@
 .type sigsafe_##name,@function                                          ;\
 .ent sigsafe_##name                                                     ;\
 LABEL(sigsafe_##name)                                                   ;\
-        .frame  sp,8+8*args,ra                                          ;\
-        .mask   SAVEDMASK_##args,-8-8*args                              ;\
-        ldgp    gp,0(pv)                                                ;\
-        lda     sp,-8-8*args(sp)                                        ;\
-        SAVERESTORE_REGS_##args(stq)                                    ;\
-        .prologue 1                                                     ;\
-        lda     t0, sigsafe_key                                         ;\
-        ldl     a0, 0(t0)                                               ;\
-        jsr     ra,pthread_getspecific                                  ;\
-        ldgp    gp,0(ra)                                                ;\
-        SAVERESTORE_REGS_##args(ldq)                                    ;\
+        START(args)                                                     ;\
         beq     v0, $sigsafe_##name##_nocompare                         ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
         ldl     t0, 0(v0)                                               ;\
@@ -115,5 +105,28 @@ $sigsafe_##name##_error:                                                ;\
         SAVERESTORE_REGS_5(op)                                          ;\
         op      a5,48(sp)
 /*@}*/
+
+#ifdef _THREAD_SAFE
+#define START(args) \
+        .frame  sp,8+8*args,ra                                          ;\
+        .mask   SAVEDMASK_##args,-8-8*args                              ;\
+        ldgp    gp,0(pv)                                                ;\
+        lda     sp,-8-8*args(sp)                                        ;\
+        SAVERESTORE_REGS_##args(stq)                                    ;\
+        .prologue 1                                                     ;\
+        lda     t0, sigsafe_key                                         ;\
+        ldl     a0, 0(t0)                                               ;\
+        jsr     ra,pthread_getspecific                                  ;\
+        ldgp    gp,0(ra)                                                ;\
+        SAVERESTORE_REGS_##args(ldq)
+#else
+        .frame  sp,8,ra                                                 ;\
+        .mask   SAVEDMASK_0,-8                                          ;\
+        ldgp    gp,0(pv)                                                ;\
+        lda     sp,-8*args(sp)                                          ;\
+        .prologue 1                                                     ;\
+        lda     t0, sigsafe_key                                         ;\
+        ldl     v0, 0(t0)
+#endif
 
 #include "syscalls.h"

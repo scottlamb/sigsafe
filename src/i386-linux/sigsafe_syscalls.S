@@ -33,15 +33,17 @@
  * %edi      arg 5                               preserve
  */
 
+#ifdef _THREAD_SAFE
 .comm sigsafe_key,4
+#else
+.comm sigsafe_data,4
+#endif
 
 #define SYSCALL(name, args)                                             ;\
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
 LABEL(sigsafe_##name)                                                   ;\
-        pushl   sigsafe_key                                             ;\
-        call    pthread_getspecific                                     ;\
-        pop     %ecx /* not used */                                     ;\
+        LOAD_TSD                                                        ;\
         SAVE_REGS_##args                                                ;\
         COPY_STACK_PTR_##args                                           ;\
         SETUP_ARGS_##args                                               ;\
@@ -150,5 +152,15 @@ label:
         _SETUP_ARGS_4(off+4)                                                ;\
         /*      0x00+off(%ebx) contains our saved %edi */
 /*@}*/
+
+#ifdef _THREAD_SAFE
+#define LOAD_TSD \
+        pushl   sigsafe_key                                             ;\
+        call    pthread_getspecific                                     ;\
+        pop     %ecx /* not used */
+#else
+#define LOAD_TSD \
+        movl    sigsafe_data,%eax                                       ;\
+#endif
 
 #include "syscalls.h"

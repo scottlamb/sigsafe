@@ -42,24 +42,18 @@
  * if the kernel return an error, setup a valid gp and jmp to _cerror
  */
 
+#ifdef _THREAD_SAFE
 .comm sigsafe_key,4
+#else
+.comm sigsafe_data,4
+#endif
 
 #define SYSCALL(name, args)                                              \
 .text                                                                   ;\
 .globl sigsafe_##name                                                   ;\
 .ent sigsafe_##name                                                     ;\
 sigsafe_##name:                                                         ;\
-        .frame  sp,8+8*args,ra                                          ;\
-        .mask   SAVEDMASK_##args,-8-8*args                              ;\
-        ldgp    gp,0(pv)                                                ;\
-        lda     sp,-8-8*args(sp)                                        ;\
-        SAVERESTORE_REGS_##args(stq)                                    ;\
-        .prologue 1                                                     ;\
-        lda     t0, sigsafe_key                                         ;\
-        ldl     a0, 0(t0)                                               ;\
-        jsr     ra,__pthread_getspecific                                ;\
-        ldgp    gp,0(ra)                                                ;\
-        SAVERESTORE_REGS_##args(ldq)                                    ;\
+        START                                                           ;\
         beq     v0, $sigsafe_##name##_nocompare                         ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
         ldl     t0, 0(v0)                                               ;\
@@ -121,5 +115,29 @@ $sigsafe_##name##_error:                                                ;\
         SAVERESTORE_REGS_5(op)                                          ;\
         op      a5,48(sp)
 /*@}*/
+
+#ifdef _THREAD_SAFE
+#define START(args) \
+        .frame  sp,8+8*args,ra                                          ;\
+        .mask   SAVEDMASK_##args,-8-8*args                              ;\
+        ldgp    gp,0(pv)                                                ;\
+        lda     sp,-8-8*args(sp)                                        ;\
+        SAVERESTORE_REGS_##args(stq)                                    ;\
+        .prologue 1                                                     ;\
+        lda     t0, sigsafe_key                                         ;\
+        ldl     a0, 0(t0)                                               ;\
+        jsr     ra,__pthread_getspecific                                ;\
+        ldgp    gp,0(ra)                                                ;\
+        SAVERESTORE_REGS_##args(ldq)
+#else
+#define START(args)
+        .frame  sp,8,ra                                                 ;\
+        .mask   SAVEDMASK_0,-8                                          ;\
+        ldgp    gp,0(pv)                                                ;\
+        lda     sp,-8(sp)                                               ;\
+        .prologue 1                                                     ;\
+        lda     t0, sigsafe_data                                        ;\
+        ldl     v0, 0(t0)
+#endif
 
 #include "syscalls.h"

@@ -8,15 +8,17 @@
 
 #define EINTR 4 /* from sys/errno.h> */
 
+#ifdef _THREAD_SAFE
 .comm sigsafe_key,4
+#else
+.comm sigsafe_data,4
+#endif
 
 #define SYSCALL(name,args)                                               \
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
 LABEL(sigsafe_##name)                                                   ;\
-        pushl   sigsafe_key                                             ;\
-        call    pthread_getspecific                                     ;\
-        pop     %ecx /* discarded */                                    ;\
+        LOAD_TSD                                                        ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
 LABEL(_sigsafe_##name##_minjmp)                                         ;\
@@ -38,5 +40,15 @@ L_sigsafe_##name##_error:                                               ;\
 #define LABEL(label)                                                     \
 .global label                                                           ;\
 label:
+
+#ifdef _THREAD_SAFE
+#define LOAD_TSD \
+        pushl   sigsafe_key                                             ;\
+        call    pthread_getspecific                                     ;\
+        pop     %ecx /* discarded */
+#else
+#define LOAD_TSD \
+        mov     sigsafe_data,%eax
+#endif
 
 #include "syscalls.h"
