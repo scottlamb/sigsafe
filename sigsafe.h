@@ -160,6 +160,8 @@
  * If you install any signal handlers through other methods, you should ensure
  * that they mask the "safe" signals, as jumping from nested signal handlers
  * is not safe.
+ * @note
+ * Call this function at most once for each signal number.
  * @ingroup sigsafe_control
  */
 int sigsafe_install_handler(int signum,

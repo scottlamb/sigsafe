@@ -23,10 +23,12 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd *tsd = pthread_getspecific(sigsafe_key);
     assert(0 <= signum && signum < _NSIGS);
     if (tsd != NULL) {
-        user_handlers[signum](signum, siginfo, ctx, tsd->user_data);
+        if (user_handlers[signum] != NULL) {
+            user_handlers[signum](signum, siginfo, ctx, tsd->user_data);
+        }
+        tsd->signal_received = 1;
+        sighandler_for_platform(ctx);
     }
-    tsd->signal_received = 1;
-    sighandler_for_platform(ctx);
 }
 
 int sigsafe_install_handler(int signum,
