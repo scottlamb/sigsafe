@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 int error_wrap(int retval, const char *funcname) {
     if (retval < 0) {

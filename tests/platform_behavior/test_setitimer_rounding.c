@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 int error_wrap(int retval, const char *funcname) {
     if (retval < 0) {
@@ -46,7 +47,6 @@ volatile sig_atomic_t sigalrm_received;
 void sigalrm_handler(int signum) { sigalrm_received = 1; }
 
 int main(void) {
-    sigset_t alrm_set;
     struct itimerval it;
     struct timespec ts;
     int retval;
