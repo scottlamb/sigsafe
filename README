@@ -5,7 +5,7 @@ Scott Lamb <slamb@slamb.org>
 WHAT IS THIS?
 =============
 
-sigsafe is a library for safely, reliably, and promptly handling signals to
+sigsafe is a C library for safely, reliably, and promptly handling signals to
 specific threads without significant overhead. Any code which attempts to do
 this without sigsafe is likely wrong. Please see the top-level API
 documentation for common incorrect patterns and their safe replacement.
