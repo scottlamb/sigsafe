@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -93,11 +92,17 @@ void run_test(struct test *t) {
     }
     error_wrap(waitpid(childpid, &status, WUNTRACED), "waitpid", ERRNO);
     assert(WIFSTOPPED(status));
-    error_wrap(ptrace(PT_ATTACH, childpid, 0, 0), "ptrace", ERRNO);
+    trace_attach(childpid);
     while (1) {
         printf("instruction\n");
-        errno = 0;
-        error_wrap(ptrace(PT_CONTINUE, childpid, (caddr_t) 1, 0), "ptrace", ERRNO);
+        trace_step(childpid);
+        error_wrap(waitpid(childpid, &status, WUNTRACED), "waitpid", ERRNO);
+        if (WIFEXITED(status)) {
+            printf("Child exited.\n");
+            break;
+        } else {
+            assert(WIFSTOPPED(status));
+        }
     }
 }
 

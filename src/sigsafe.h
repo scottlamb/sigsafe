@@ -200,6 +200,7 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t);
  * Before this is called for a given thread, "safe" signals delivered to that
  * thread will be silently ignored. If you are concerned about signals
  * delivered at thread startup, ensure threads start with blocked signals.
+ * @pre This function has not previously been called in this thread.
  * @param userdata   Thread-specific user data which will be delivered to your
  *                   handler routine with every signal.
  * @param destructor An optional destructor for userdata, to be run at thread
@@ -207,6 +208,21 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t);
  * @ingroup sigsafe_control
  */
 int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
+
+/**
+ * Clears the signal received flag for this thread.
+ * After calling this function, sigsafe system calls will not receive
+ * <tt>-EINTR</tt> due to signals received before this call.
+ * @pre sigsafe_install_tsd has been called in this thread.
+ * @returns The user-specified data given when the TSD was installed for this
+ *          thread.
+ * @note Additional signals could arrive between a sigsafe sytem call
+ * returning <tt>-EINTR</tt> and the heart of this function; it will clear
+ * them all. If this is a concern for your application, use the userdata to
+ * track signals and check it <i>after</i> calling this function.
+ * @ingroup sigsafe_control
+ */
+intptr_t sigsafe_clear_received(void);
 
 /**
  * @defgroup sigsafe_syscalls System call wrappers

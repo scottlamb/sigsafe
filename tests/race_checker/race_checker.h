@@ -9,6 +9,9 @@
 #ifndef RACECHECKER_H
 #define RACECHECKER_H
 
+#include <sys/types.h>      /* for pid_t */
+#include <signal.h>         /* for sig_atomic_t */
+
 enum error_return_type {
     DIRECT,
     NEGATIVE,
@@ -22,6 +25,15 @@ enum run_result {
     NORMAL,
     WEIRD
 };
+
+/**
+ * @defgroup trace Platform-specific process tracing functions
+ */
+/*@{*/
+void trace_attach(pid_t);
+void trace_step(pid_t);
+void trace_continue(pid_t, int);
+/*@}*/
 
 /**
  * @defgroup races_generic Generic routines

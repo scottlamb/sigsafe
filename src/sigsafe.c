@@ -120,7 +120,18 @@ int sigsafe_install_handler(int signum,
     pthread_once(&sigsafe_once, &sigsafe_init);
     user_handlers[signum] = handler;
     sa.sa_sigaction = (void*) &sighandler;
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+
+    /*
+     * XXX
+     * I originally had SA_RESTART here - it meant non-safe syscalls would
+     * never return EINTR from these signals, which I think makes it much more
+     * clear that code that expects them is broken. But Linux/x86 gives me
+     * SIGSEGVs (only when not run from gdb, of course). I wonder if the
+     * kernel just doesn't like restarting the syscall with a different EIP
+     * than before. Taking SA_RESTART away here seems to prevent that.
+     */
+    sa.sa_flags = /*SA_RESTART |*/ SA_SIGINFO;
+
     if (sigaction(signum, &sa, NULL) != 0) {
         return -errno;
     }
@@ -149,4 +160,14 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     }
 
     return 0;
+}
+
+intptr_t sigsafe_clear_received(void) {
+    struct sigsafe_tsd *tsd;
+    int retval;
+
+    tsd = (struct sigsafe_tsd*) pthread_getspecific(sigsafe_key);
+    assert(tsd != NULL);
+    tsd->signal_received = 0;
+    return tsd->user_data;
 }
