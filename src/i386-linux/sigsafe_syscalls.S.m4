@@ -58,22 +58,26 @@ ifelse(eval($2 > 4), 1, [dnl
         movl    %esp,%ebx
 ifelse($2, 1, [dnl
         movl    0x08(%ebx),%ebx
+        /*      0x04(%ebx) contains our return address */
 ], [])dnl
 ifelse($2, 2, [dnl
         movl    0x0c(%ebx),%ecx
         movl    0x08(%ebx),%ebx
+        /*      0x04(%ebx) contains our return address */
 ], [])dnl
 ifelse($2, 3, [dnl
         movl    0x10(%ebx),%edx
         movl    0x0c(%ebx),%ecx
         movl    0x08(%ebx),%ebx
+        /*      0x04(%ebx) contains our return address */
 ], [])dnl
 ifelse($2, 4, [dnl
         movl    0x18(%ebx),%esi
         movl    0x14(%ebx),%edx
         movl    0x10(%ebx),%ecx
         movl    0x0c(%ebx),%ebx
-        /* 0x08(%ebx) contains our saved %esi */
+        /*      0x08(%ebx) contains our return address */
+        /*      0x04(%ebx) contains our saved %edi */
 ], [])dnl
 ifelse($2, 5, [dnl
         movl    0x20(%ebx),%edi
@@ -81,8 +85,9 @@ ifelse($2, 5, [dnl
         movl    0x18(%ebx),%edx
         movl    0x14(%ebx),%ecx
         movl    0x10(%ebx),%ebx
-        /* 0x0c(%ebx) contains our saved %edi */
-        /* 0x08(%ebx) contains our saved %esi */
+        /*      0x0c(%ebx) contains our return address */
+        /*      0x08(%ebx) contains our saved %esi */
+        /*      0x04(%ebx) contains our saved %edi */
 ], [])])dnl
         testl   %eax,%eax
         je      L_sigsafe_$1_nocompare
