@@ -1,0 +1,11 @@
+$Id$
+
+- <http://www.x86-64.org/documentation>
+  A very thorough guide. Among other things, it describes both the function
+  call convention and the syscall convention.
+
+- <http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/linux/x86_64/sysdep.h?cvsroot=glibc>
+  glibc's ia64 stuff
+
+- <http://www.fefe.de/dietlibc/>
+  dietlibc
