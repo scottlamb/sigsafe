@@ -73,7 +73,7 @@ static void sigsafe_init(void) {
      */
     fp = &pthread_getspecific;
     fp = &sighandler_for_platform;
-    fp = &abort;
+    fp = &write;
 }
 
 int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {

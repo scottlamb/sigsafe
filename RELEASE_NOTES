@@ -6,12 +6,38 @@ sigsafe version 0.1.3-dev release notes:
 
 * Linux/alpha has mixed results:
 
-  - On spe142 - an Alpha DS40 running Debian 3.0, kernel 2.4.18-generic -
-    it appears to work perfectly.
+  - On a single-processor system, it appears to work perfectly. Details:
 
-  - On spe144 - an Alpha ES40 running RedHat 7.2, kernel 2.4.9-32.5smp,
-    glibc 2.2.4-29 - the race condition checker often shows the traced child
-    as dying from signal 1.
+    spe141.testdrive.compaq.com:
+    - Alpha XP1000a
+    - Debian 3.0
+    - kernel 2.4.18-generic
+    - glibc 2.2.5
+
+    Unfortunately, this system is being removed, so I will not be able to test
+    it for much longer.
+
+  - On three different SMP systems, the race condition checker often fails -
+    the child dies with SIGTRAP. I think this is not a real problem with the
+    code being checked, but rather a race in ptrace() itself. Machine details:
+
+    spe144.testdrive.compaq.com:
+    - Alpha ES40
+    - RedHat 7.2
+    - kernel 2.4.9-32.5smp
+    - glibc 2.2.4-29
+
+    spe161.testdrive.compaq.com:
+    - Alpha DS40
+    - Debian 3.0
+    - kernel 2.4.18-smp
+    - glibc 2.2.5
+
+    spe148.testdrive.compaq.com:
+    - Alpha DS40
+    - RedHat 7.2
+    - kernel 2.4.9-32.5smp
+    - glibc 2.2.4-29
 
 * The FreeBSD/x86 support is preliminary:
 
@@ -55,7 +81,7 @@ sigsafe version 0.1.3-dev release notes:
     attached
     stepped once
 
-    ERROR: Child was killed/dump from signal 1.
+    ERROR: Child was killed/dump from signal 5.
 
     ...
 
@@ -67,5 +93,5 @@ sigsafe version 0.1.3-dev release notes:
 
     * - These 3 tests did not return the expected result.
 
-  The child isn't exiting from signal 1; the Mach tracing code I'm using just
-  isn't working. As far as I know, sigsafe works fine under Darwin.
+  signal 5 is SIGTRAP. I need to find out how to intercept this so the child
+  does not die.

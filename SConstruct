@@ -17,7 +17,6 @@ type = 'debug'
 buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
 
 env = Environment(
-    CPP = 'cpp3',
     CPPPATH = [
         '#/src',
         '#/src/' + arch + '-' + os_name

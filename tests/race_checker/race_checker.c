@@ -417,7 +417,7 @@ enum test_result run_test(const struct test *t) {
                 break;
             } else if (info.si_code == CLD_KILLED || info.si_code == CLD_DUMPED) {
                 printf("\nERROR: Child was killed/dumped from signal %d.\n\n",
-                       WIFSIGNALED(info.si_status));
+                       WTERMSIG(info.si_status));
                 if (t->teardown != NULL)
                     t->teardown(test_data);
                 return FAILURE;
