@@ -1,5 +1,5 @@
 /** @file
- * Adjusts instruction pointer as necessary on alpha-linux.
+ * Adjusts instruction pointer as necessary on alpha-osf1.
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.

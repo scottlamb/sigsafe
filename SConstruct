@@ -16,7 +16,14 @@ Export('os_name')
 type = 'debug'
 buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
 
-env = Environment(
+env = None
+if os_name == 'osf1':
+    # gcc doesn't work with pthreads, so force use of the native tools
+    env = Environment(tools = ['cc','link','ar','as'])
+else:
+    env = Environment()
+
+env.Append(
     CPPPATH = [
         '#/src',
         '#/src/' + arch + '-' + os_name
@@ -26,10 +33,11 @@ env = Environment(
         '_THREAD_SAFE',
     ],
     LIBPATH = [
-        '#/' + buildDir
+        '#/' + buildDir,
     ]
 )
 
+# Flags for threading
 if os_name == 'freebsd':
     if True:
         # use LinuxThreads
@@ -41,25 +49,53 @@ if os_name == 'freebsd':
     else:
         # use built-in user pthreads
         # DON'T USE ON 4.X.
-        env.Append(CCFLAGS = ['-pthread'])
-        env.Append(LINKFLAGS = ['-pthread'])
+        env.Append(
+            CCFLAGS = ['-pthread'],
+            LINKFLAGS = ['-pthread']
+        )
+elif os_name == 'osf1':
+    env.Append(
+        CCFLAGS = ['-pthread'],
+        LINKFLAGS = ['-pthread']
+    )
 else:
     env.Append(LIBS = ['pthread'])
 
+# Misc. other flags
+
+if os_name != 'freebsd':
+    # FreeBSD has at least two problems with this:
+    # - NSIG is not visible.
+    # - siginfo_t is not visible unless POSIX_SOURCE=200112 also defined.
+    #   (That's a bug; it should be implied by _XOPEN_SOURCE=600 but isn't.)
+    #
+    # I generally like having this defined where possible to make things more
+    # standards-like. For example, OSF/1 uses socklen_t when this is set.
+    env.Append(CPPDEFINES = ['_XOPEN_SOURCE=600'])
+
+if os_name == 'osf1':
+    env.Append(CPPDEFINES = ['_OSF_SOURCE']) # for mcontext_t members
+
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])
-    if type == 'debug':
-        env.Append(CCFLAGS=['-g'], LINKFLAGS=['-g'])
-    else:
-        env.Append(CPPDEFINES=['NDEBUG'],CCFLAGS=['-O2'],LINKFLAGS=['-O2'])
 
 if type == 'debug':
-    env.Append(CPPDEFINES=[
-        'ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
-                                          # safe signal received
-        'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [J] to stderr whenever
-                                          # jumping from sighandler
-    ])
+    env.Append(
+        CPPDEFINES=[
+            'ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL', # write [S] to stderr whenever
+                                              # safe signal received
+            'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [J] to stderr whenever
+                                              # jumping from sighandler
+        ],
+        CCFLAGS=['-g'],
+        LINKFLAGS=['-g'],
+    )
+else:
+    env.Append(
+        CPPDEFINES=['NDEBUG'], # turn assertions off
+        CCFLAGS=['-O'],
+        LINKFLAGS=['-O'],
+    )
 
 conf = env.Configure()
 

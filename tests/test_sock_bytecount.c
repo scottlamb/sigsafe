@@ -123,7 +123,7 @@ int main(void) {
         if (retval == this_transfer)
             write(1, "#", 1);
         else {
-            printf("[%zd]", retval);
+            printf("[%ld]", (long) retval);
             fflush(stdout);
         }
         total_rcvd += retval;
