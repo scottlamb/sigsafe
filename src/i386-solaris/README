@@ -1,6 +1,0 @@
-$Id$
-
-Copied from FreeBSD, then modified according to output from disassembling
-_read in dbx. Used "dis _read" after starting program.
-
-Like Solaris/sparc, this seems to have ERESTART; loop until it goes away.
