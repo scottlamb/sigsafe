@@ -16,13 +16,15 @@
 
 .comm sigsafe_key,4
 
+changequote([, ])
+
 define(SYSCALL, [
 .text
 .type sigsafe_$1,@function
 .global sigsafe_$1
 sigsafe_$1:
         pushl   sigsafe_key
-        call    pth$1_getspecific
+        call    pthread_getspecific
         pop     %ecx
         push    %edi
         push    %ebx
@@ -31,16 +33,16 @@ sigsafe_$1:
         movl    0x10(%edi),%ecx
         movl    0x14(%edi),%edx
         testl   %eax,%eax
-        je      nocompare
+        je      L_sigsafe_$1_nocompare
 .global _sigsafe_$1_minjmp
 _sigsafe_$1_minjmp:
-        cmp     $0,(%eax)
+        cmp     $[]0,(%eax)
         jne     _sigsafe_$1_jmpto
-nocompare:
+L_sigsafe_$1_nocompare:
         movl    $__NR_$1,%eax
 .global _sigsafe_$1_maxjmp
 _sigsafe_$1_maxjmp:
-        int     $0x80
+        int     $[]0x80
         pop     %ebx
         pop     %edi
         ret

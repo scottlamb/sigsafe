@@ -10,7 +10,8 @@ platform_subdir = arch + '-' + os_name
 source = [
     'sigsafe.c',
     platform_subdir + '/sighandler_platform.c',
-    platform_subdir + '/sigsafe_syscalls.S'
+    platform_subdir + '/sigsafe_syscalls.S',
+    platform_subdir + '/emulated_syscalls.c',
 ]
 
 env.M4(target = platform_subdir + '/sigsafe_syscalls.S',

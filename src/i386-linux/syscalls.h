@@ -9,6 +9,5 @@ SYSCALL(writev, 3)
  * dnl SYSCALL(poll, 3)
  * dnl SYSCALL(epoll_wait, 4)
  * dnl SYSCALL(wait4, 4)
+ * dnl SYSCALL(socketcall, 2)
  */
-SYSCALL(accept, 3)
-SYSCALL(connect, 3)

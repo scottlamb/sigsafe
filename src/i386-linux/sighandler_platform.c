@@ -14,7 +14,6 @@ void sighandler_for_platform(ucontext_t *ctx) {
     eip = (void*) ctx->uc_mcontext.gregs[REG_EIP];
     for (s = sigsafe_syscalls; s->address != NULL; s++) {
         if (s->minjmp <= eip && eip <= s->maxjmp) {
-            write(2, "CTX", 3);
             ctx->uc_mcontext.gregs[REG_EIP] = (int) s->jmpto;
             return;
         }
