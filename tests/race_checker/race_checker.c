@@ -97,11 +97,58 @@ struct test {
     void (*teardown)(void*);
     enum test_result result;
     enum test_result expected;
+    int should_run;
 } tests[] = {
-    { "sigsafe_read",   &create_pipe,       &install_safe,      &do_sigsafe_read,   &nudge_read,    &cleanup_pipe, NOT_RUN, SUCCESS },
-    { "racebefore_read",&create_pipe,       &install_unsafe,    &do_racebefore_read,&nudge_read,    &cleanup_pipe, NOT_RUN, FAILURE },
-    { "raceafter_read", &create_pipe,       &install_unsafe,    &do_raceafter_read, &nudge_read,    &cleanup_pipe, NOT_RUN, FAILURE },
-    { NULL,             NULL,               NULL,               NULL,               NULL,           NULL,          NOT_RUN, NOT_RUN }
+    {
+        name:               "sigsafe_read",
+        pre_fork_setup:     &create_pipe,
+        child_setup:        &install_safe,
+        instrumented:       &do_sigsafe_read,
+        nudge:              &nudge_read,
+        teardown:           &cleanup_pipe,
+        result:             NOT_RUN,
+        expected:           SUCCESS
+    },
+    {
+        name:               "racebefore_read",
+        pre_fork_setup:     &create_pipe,
+        child_setup:        &install_unsafe,
+        instrumented:       &do_racebefore_read,
+        nudge:              &nudge_read,
+        teardown:           &cleanup_pipe,
+        result:             NOT_RUN,
+        expected:           SUCCESS
+    },
+    {
+        name:               "racebefore_read",
+        pre_fork_setup:     &create_pipe,
+        child_setup:        &install_unsafe,
+        instrumented:       &do_racebefore_read,
+        nudge:              &nudge_read,
+        teardown:           &cleanup_pipe,
+        result:             NOT_RUN,
+        expected:           SUCCESS
+    },
+    {
+        name:               "raceafter_read",
+        pre_fork_setup:     &create_pipe,
+        child_setup:        &install_unsafe,
+        instrumented:       &do_raceafter_read,
+        nudge:              &nudge_read,
+        teardown:           &cleanup_pipe,
+        result:             NOT_RUN,
+        expected:           SUCCESS
+    },
+    {
+        name:               NULL,
+        pre_fork_setup:     NULL,
+        child_setup:        NULL,
+        instrumented:       NULL,
+        nudge:              NULL,
+        teardown:           NULL,
+        result:             NOT_RUN,
+        expected:           NOT_RUN
+    }
 };
 
 /**
@@ -143,7 +190,7 @@ enum test_result run_test(const struct test *t) {
      * XXX
      * For some reason, exit() takes a _LOT_ of instructions - a lot of atexit
      * handlers? I just assume for now that nothing exciting will happen after
-     * 500 instructions so I don't have to wait forever.
+     * 1000 instructions so I don't have to wait forever.
      */
     int num_steps_before_continue = 1000/*-1*/,
         num_steps_so_far;
@@ -171,10 +218,9 @@ enum test_result run_test(const struct test *t) {
         assert(statuscode == CLD_STOPPED);
         trace_attach(childpid);
 
-        if (num_steps_before_continue == -1) {
-            printf("Stepping until exit\n");
-        } else {
-            printf("Stepping %d instructions and continuing\n", num_steps_before_continue);
+        if (num_steps_before_continue != -1) {
+            printf("%d ", num_steps_before_continue);
+            fflush(stdout);
         }
         for (num_steps_so_far = 0;
                 num_steps_before_continue == -1
@@ -198,7 +244,7 @@ enum test_result run_test(const struct test *t) {
                     nudge_step = num_steps_so_far;
                     t->nudge(test_data);
                 } else {
-                    printf("ERROR: timeout on step %d\n",
+                    printf("\nERROR: timeout on step %d\n\n",
                            num_steps_so_far);
                     smite_child(childpid);
                     t->teardown(test_data);
@@ -210,19 +256,19 @@ enum test_result run_test(const struct test *t) {
             if (statuscode == CLD_EXITED) {
                 assert(num_steps_before_continue == -1);
                 error_wrap(waitpid(childpid, &status, 0), "waitpid", ERRNO);
-                printf("Child exited with status %d\n", WEXITSTATUS(status));
                 if (WEXITSTATUS(status) != NORMAL) {
-                    fprintf(stderr, "ERROR: First run should be a normal exit.\n");
+                    fprintf(stderr,
+                            "\nERROR: First run should be a normal exit.\n\n");
                     t->teardown(test_data);
                     return FAILURE;
                 }
                 break;
             } else if (statuscode == CLD_KILLED || statuscode == CLD_DUMPED) {
-                printf("ERROR: Child was killed/dumped from signal.\n");
+                printf("\nERROR: Child was killed/dumped from signal.\n\n");
                 t->teardown(test_data);
                 return FAILURE;
             } else if (status == CLD_STOPPED) {
-                printf("ERROR: Child was stopped?!?\n");
+                printf("\nERROR: Child was stopped?!?\n\n");
                 t->teardown(test_data);
                 return FAILURE;
             }
@@ -240,7 +286,7 @@ enum test_result run_test(const struct test *t) {
 
                 /* Timeout */
                 smite_child(childpid);
-                printf("ERROR: timed out after continue\n");
+                printf("\nERROR: timed out after continue\n\n");
                 t->teardown(test_data);
                 return FAILURE;
             }
@@ -249,23 +295,23 @@ enum test_result run_test(const struct test *t) {
             if (WIFEXITED(status)) {
                 if (WEXITSTATUS(status) == INTERRUPTED
                     && num_steps_before_continue > nudge_step) {
-                    printf("ERROR: Interrupted after nudge\n");
+                    printf("\nERROR: Interrupted after nudge\n\n");
                     t->teardown(test_data);
                     return FAILURE;
                 } else if (WEXITSTATUS(status) == NORMAL
                            && num_steps_before_continue < nudge_step) {
-                    printf("ERROR: normal return before nudge\n");
+                    printf("\nERROR: normal return before nudge\n\n");
                     t->teardown(test_data);
                     return FAILURE;
                 } else if (WEXITSTATUS(status) == INTERRUPTED) {
-                    /*printf("Good; interrupted\n");*/
+                    /*printf("\nGood; interrupted\n");*/
                 } else if (WEXITSTATUS(status) == NORMAL) {
-                    /*printf("Good; normal\n");*/
+                    /*printf("\nGood; normal\n");*/
                 } else {
                     abort();
                 }
             } else if (WIFSIGNALED(status)) {
-                printf("ERROR: exited on signal %d.\n", WTERMSIG(status));
+                printf("\nERROR: exited on signal %d.\n\n", WTERMSIG(status));
             } else {
                 abort();
             }
@@ -273,25 +319,97 @@ enum test_result run_test(const struct test *t) {
         num_steps_before_continue = num_steps_so_far - 1;
         t->teardown(test_data);
     } while (num_steps_before_continue >= 0) ;
+    printf("\nSuccess\n\n");
     return SUCCESS;
 }
 
-int main(void) {
+/** Prints a usage message to stdout. */
+void help(void) {
+    printf("race_checker - exhaustively search for race conditions in signal code.\n\n");
+    printf("Usage:\n\n");
+
+    printf("race_checker -h\n");
+    printf("race_checker --help\n");
+    printf("    Prints this message and exits.\n\n");
+
+    printf("race_checker -l\n");
+    printf("race_checker --list\n");
+    printf("    Lists the available tests.\n\n");
+
+    printf("race_checker -a\n");
+    printf("race_checker --run-all\n");
+    printf("    Runs all tests.\n\n");
+
+    printf("race_checker test1 [test2 [test3 [...]]]\n");
+    printf("    Runs the specified tests only.\n\n");
+}
+
+int main(int argc, char **argv) {
     struct sigaction sa;
-    int i;
+    int i, run_all = 0, run_specific = 0;
 
     sa.sa_sigaction = &sigchld_handler;
     error_wrap(sigemptyset(&sa.sa_mask), "sigempty", ERRNO);
     sa.sa_flags = SA_SIGINFO;
     error_wrap(sigaction(SIGCHLD, &sa, NULL), "sigaction", ERRNO);
+
+    while (argc > 1) {
+        --argc; ++argv;
+        if (strcmp(*argv, "--list") == 0 || strcmp(*argv, "-l") == 0) {
+            /* List the tests we can run */
+            printf("%-20s Expected result\n", "Test name");
+            for (i = 0; tests[i].name != NULL; i++) {
+                printf("%-20s %s\n",
+                       tests[i].name,
+                       tests[i].expected == SUCCESS ? "success"
+                                                    : "failure");
+            }
+            return 0;
+        } else if (   strcmp(*argv, "--run-all") == 0
+                   || strcmp(*argv, "-a") == 0) {
+            run_all = 1;
+        } else if ((*argv)[0] != 0 && (*argv)[0] != '-') {
+            /* A specific test to run */
+            run_specific = 1;
+            for (i = 0; tests[i].name != NULL; i++) {
+                if (strcmp(*argv, tests[i].name) == 0) {
+                    tests[i].should_run = 1;
+                    break;
+                }
+            }
+            if (tests[i].name == NULL) {
+                fprintf(stderr, "Couldn't find test '%s'\n", *argv);
+                return 1;
+            }
+        } else if (strcmp(*argv, "-h") == 0 || strcmp(*argv, "--help") == 0) {
+            help();
+            return 0;
+        } else {
+            fprintf(stderr, "Invalid arguments.\n");
+            help();
+            return 0;
+        }
+    }
+
+    if (!run_all && !run_specific) {
+        fprintf(stderr, "No tests given.\n");
+        help();
+        return 1;
+    }
+
+    /* Run all tests */
     for (i = 0; tests[i].name != NULL; i++) {
-        tests[i].result = run_test(&tests[i]);
+        if (tests[i].should_run || run_all) {
+            tests[i].result = run_test(&tests[i]);
+        }
     }
 
     printf("\n\n\n\n\n");
     for (i = 0; tests[i].name != NULL; i++) {
-        printf("%20s %s\n", tests[i].name, tests[i].result == SUCCESS
-                                           ? "success" : "failure");
+        if (tests[i].result != NOT_RUN) {
+            printf("%20s %s\n", tests[i].name, tests[i].result == SUCCESS
+                                               ? "success" : "failure");
+        }
     }
 
     return 0;
