@@ -7,6 +7,7 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
+SYSCALL(nanosleep, 3)
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
 SYSCALL(write, 3)

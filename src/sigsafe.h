@@ -19,9 +19,15 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+
 #ifdef HAVE_EPOLL
+/*
+ * RedHat 9's epoll header needs stdint.h but doesn't include it itself.
+ */
+#include <stdint.h>
 #include <sys/epoll.h>
 #endif
+
 #ifdef HAVE_POLL
 #include <sys/poll.h>
 #endif

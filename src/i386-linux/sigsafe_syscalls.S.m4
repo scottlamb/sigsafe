@@ -7,8 +7,20 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 
+/*
+ * __NR_select actually refers to an older version that takes a structure.
+ * We want the not-obsolete one.
+ /
 #undef __NR_select
 #define __NR_select __NR__newselect
+
+/*
+ * RedHat 9 has the epoll header but does not define __NR_epoll; most
+ * annoying. Work around by including it here.
+ */
+#ifndef __NR_epoll_wait
+#define __NR_epoll_wait 256
+#endif
 
 /*
  * int 0x80 form of syscall:
