@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <pthread.h>
+#include <setjmp.h>
 #include "race_checker.h"
 
 enum test_result {
@@ -64,6 +65,24 @@ int error_wrap(int retval, const char *funcname, enum error_return_type type) {
     return retval;
 }
 
+volatile sig_atomic_t jump_is_safe;
+volatile sig_atomic_t statuscode;
+sigjmp_buf env;
+
+void sigchld_handler(int signum, siginfo_t *info, void *ctx) {
+    assert(signum == SIGCHLD);
+    /*write(2, "CHLD ", 5);*/
+    if (info->si_code == CLD_CONTINUED) {
+        /* ignored; we know this */
+    } else {
+        statuscode = info->si_code;
+        if (jump_is_safe) {
+            jump_is_safe = 0;
+            siglongjmp(env, 1);
+        }
+    }
+}
+
 struct test {
     const char *name;
     void* (*pre_fork_setup)();
@@ -77,29 +96,23 @@ struct test {
     { NULL,             NULL,               NULL,               NULL,               NULL,           NULL }
 };
 
+/**
+ * Run the test for a given function.
+ * @bug There is some <i>ugly</i> code in here.
+ */
 void run_test(struct test *t) {
     void *test_data;
     pid_t childpid;
-    int status;
-    int num_steps_before_continue = 500/*-1*/, num_steps_so_far;
+    int num_steps_before_continue = -1, num_steps_so_far;
     int nudge_step = -1;
-    sigset_t chld_set;
-    struct siginfo info;
+    int status;
     struct timespec timeout;
     int retval;
 
-    timeout.tv_sec = 1L;
-    timeout.tv_nsec = 0L;
-
-    error_wrap(sigemptyset(&chld_set), "sigemptyset", ERRNO);
-    error_wrap(sigaddset(&chld_set, SIGCHLD), "sigaddset", ERRNO);
-    error_wrap(pthread_sigmask(SIG_SETMASK, &chld_set, NULL),
-               "pthread_sigmask", DIRECT);
-
     printf("Running %s test\n", t->name);
     do {
-        printf("Iteration\n");
         test_data = t->pre_fork_setup();
+        statuscode = -1;
         if ((childpid = error_wrap(fork(), "fork", ERRNO)) == 0) {
             /* Child */
             if (t->child_setup != NULL) {
@@ -108,9 +121,11 @@ void run_test(struct test *t) {
             raise(SIGSTOP); /* a marker for the parent to trace us with */
             exit((int) t->instrumented(test_data));
         }
-        retval = sigwaitinfo(&chld_set, &info);
-        assert(retval == SIGCHLD);
-        assert(info.si_code == CLD_STOPPED);
+        sigsetjmp(env, 1);
+        jump_is_safe = 1;
+        while (statuscode == -1) pause();
+        jump_is_safe = 0;
+        assert(statuscode == CLD_STOPPED);
         trace_attach(childpid);
 
         if (num_steps_before_continue == -1) {
@@ -118,78 +133,90 @@ void run_test(struct test *t) {
         } else {
             printf("Stepping %d instructions\n", num_steps_before_continue);
         }
-        printf("    ");
         for (num_steps_so_far = 0;
                 num_steps_before_continue == -1
              || num_steps_so_far < num_steps_before_continue;
              num_steps_so_far++) {
             /*printf("(step)"); fflush(stdout);*/
-            trace_step(childpid);
-            while (1) {
-                if ((retval = sigtimedwait(&chld_set, &info, &timeout))
-                    != SIGCHLD) {
-                    if (retval == -1 && errno == EAGAIN) {
-                        if (nudge_step == -1) {
-                            printf("Nudge at instruction %d\n", num_steps_so_far);
-                            nudge_step = num_steps_so_far;
-                        } else if (nudge_step != num_steps_so_far) {
-                            printf("WARNING: nudge step different! (new %d, old %d)\n",
-                                   num_steps_so_far, nudge_step);
-                        } else {
-                            printf("(nudge)");
-                            fflush(stdout);
-                        }
-                        t->nudge(test_data);
-                    } else if (retval == -1) {
-                        error_wrap(retval, "sigtimedwait", ERRNO);
-                    } else {
-                        fprintf(stderr, "Received signal %d\n", retval);
-                        abort();
-                    }
-                } else if (info.si_code == CLD_CONTINUED) {
-                    printf("(continued)");
-                    fflush(stdout);
+            statuscode = -1;
+            trace_step(childpid, num_steps_so_far == nudge_step ? SIGUSR1
+                                                                : 0);
+            sigsetjmp(env, 1);
+            jump_is_safe = 1;
+            while (statuscode == -1) {
+                timeout.tv_sec = 1L;
+                timeout.tv_nsec = 0L;
+                retval = nanosleep(&timeout, NULL);
+                jump_is_safe = 0;
+                error_wrap(retval, "nanosleep", ERRNO);
+
+                /* Timed out; we need to nudge it */
+                if (nudge_step == -1) {
+                    printf("Nudge at instruction %d\n", num_steps_so_far);
+                    nudge_step = num_steps_so_far;
+                    t->nudge(test_data);
                 } else {
-                    break;
+                    printf("ERROR: timeout on step %d\n",
+                           num_steps_so_far);
                 }
+                jump_is_safe = 1;
             }
-            if (info.si_code == CLD_EXITED) {
+            jump_is_safe = 0;
+            if (statuscode == CLD_EXITED) {
                 assert(num_steps_before_continue == -1);
+                error_wrap(waitpid(childpid, &status, 0), "waitpid", ERRNO);
                 printf("Child exited with status %d\n", WEXITSTATUS(status));
-                /* FIXME */
+                if (WEXITSTATUS(status) != NORMAL) {
+                    fprintf(stderr, "ERROR: First run should be a normal exit.\n");
+                }
                 break;
-            } else if (info.si_code == CLD_TRAPPED) {
-                break;
-            } else if (info.si_code == CLD_KILLED
-                       || info.si_code == CLD_DUMPED) {
-                printf("Umm. It died. That's bad.\n");
-            } else if (info.si_code == CLD_STOPPED) {
-                printf("It stopped?!?\n");
-            } else {
-                printf("Unknown CLD si_code\n");
-                abort();
+            } else if (statuscode == CLD_KILLED || statuscode == CLD_DUMPED) {
+                printf("ERROR: Child was killed/dumped from signal.\n");
+            } else if (status == CLD_STOPPED) {
+                printf("ERROR: Child was stopped?!?\n");
             }
         }
-        printf("\n");
 
-        if (WIFSTOPPED(status)) {
+        if (statuscode == CLD_TRAPPED) {
             printf("Continuing until exit\n");
             trace_detach(childpid, SIGUSR1);
             error_wrap(waitpid(childpid, &status, 0), "waitpid", ERRNO);
             if (WIFEXITED(status)) {
-                printf("Exited with value %d.\n", WEXITSTATUS(status));
+                if (WEXITSTATUS(status) == INTERRUPTED
+                    && num_steps_before_continue >= nudge_step) {
+                    printf("ERROR: Interrupted after nudge\n");
+                } else if (WEXITSTATUS(status) == NORMAL
+                           && num_steps_before_continue < nudge_step) {
+                    printf("ERROR: normal return before nudge\n");
+                } else if (WEXITSTATUS(status) == INTERRUPTED) {
+                    printf("Good; interrupted\n");
+                } else if (WEXITSTATUS(status) == NORMAL) {
+                    printf("Good; normal\n");
+                } else {
+                    abort();
+                }
             } else if (WIFSIGNALED(status)) {
-                printf("Exited on signal %d.\n", WTERMSIG(status));
+                printf("ERROR: exited on signal %d.\n", WTERMSIG(status));
             } else {
                 abort();
             }
         }
         num_steps_before_continue = num_steps_so_far - 1;
         t->teardown(test_data);
+        printf("\n");
     } while (num_steps_before_continue >= 0) ;
 }
 
 int main(void) {
-    run_test(&tests[0]);
+    struct sigaction sa;
+    int i;
+
+    sa.sa_sigaction = &sigchld_handler;
+    error_wrap(sigemptyset(&sa.sa_mask), "sigempty", ERRNO);
+    sa.sa_flags = SA_SIGINFO;
+    error_wrap(sigaction(SIGCHLD, &sa, NULL), "sigaction", ERRNO);
+    for (i = 0; tests[i]->name != NULL; i++) {
+        run_test(&tests[i]);
+    }
     return 0;
 }

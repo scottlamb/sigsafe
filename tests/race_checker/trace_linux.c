@@ -9,8 +9,8 @@ void trace_attach(pid_t pid) {
                "ptrace(PTRACE_ATTACH, ...)", ERRNO);
 }
 
-void trace_step(pid_t pid) {
-    error_wrap(ptrace(PTRACE_SINGLESTEP, pid, NULL, NULL),
+void trace_step(pid_t pid, int signum) {
+    error_wrap(ptrace(PTRACE_SINGLESTEP, pid, NULL, (void*) signum),
                "ptrace(PTRACE_SINGLESTEP, ...)", ERRNO);
 }
 
