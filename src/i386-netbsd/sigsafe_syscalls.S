@@ -17,7 +17,7 @@ LABEL(sigsafe_##name)                                                   ;\
         je      L_sigsafe_##name##_nocompare                            ;\
 LABEL(sigsafe_##name##_minjmp_)                                         ;\
         cmp     $0,(%eax)                                               ;\
-        jne     _sigsafe_##name##_jmpto                                 ;\
+        jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movl    $SYS_##name,%eax                                        ;\
 LABEL(sigsafe_##name##_maxjmp_)                                         ;\

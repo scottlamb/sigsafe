@@ -1,5 +1,5 @@
 /** @file
- * Adjusts instruction pointer as necessary on i386-linux.
+ * Adjusts instruction pointer as necessary on i386-netbsd.
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.

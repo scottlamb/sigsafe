@@ -1,5 +1,5 @@
 /** @file
- * Emulated system calls under i386-freebsd.
+ * Emulated system calls on i386-netbsd.
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.

@@ -93,22 +93,45 @@
  *
  * <h3>Additional information</h3>
  *
- * - @link background Background information. @endlink
+ * - @link background Background information. @endlink (In progress.)
  *   If everything above was confusing to you, this should help you understand
  *   what signals are, why most code does not handle them safely, and how your
  *   code can.
- * - @link goalref Goal-based reference. @endlink
+ * - @link goalref Goal-based reference. @endlink (Still to write.)
  *   For writing new code. (I want to wait for blocking IO
  *   or a timeout, how should I do that?)
- * - @link patternref Pattern-based reference. @endlink
+ * - @link patternref Pattern-based reference. @endlink (In progress.)
  *   For auditing existing code. (Is this code safe? Does it
  *   perform as well as it could? Is it portable?)
+ * - @link porting Porting to new systems. @endlink (In progress.)
+ *   Tips for writing the platform-dependent portions for new platforms and
+ *   testing the results.
+ * - @link performance Performance test results. @endlink (In progress.)
+ * - The API reference itself. The "Modules" page is a good place to start.
  *
  * <h3>Availability</h3>
  *
- * sigsafe is available for Linux/i386 and Darwin/ppc (OS X). More platforms
- * should be ready soon.
+ * sigsafe is available for the following platforms:
  *
- * Please look at the <tt>README</tt> file for installation notes and porting
- * hints.
+ * - Darwin/ppc (a.k.a OS X)
+ * - FreeBSD/i386
+ * - Linux/alpha
+ * - Linux/i386
+ * - Linux/ia64
+ * - Linux/x86_64
+ * - NetBSD/i386
+ * - Solaris/sparc
+ * - Tru64/alpha
+ *
+ * I still intend to port it to:
+ *
+ * - FreeBSD/alpha
+ * - HP-UX/ia64
+ * - HP-UX/parisc
+ * - Linux/parisc
+ * - Solaris/i386
+ *
+ * At which point I will be out of machines to port it to. If you want a
+ * platform not listed, you'll have to give me access to such a machine or
+ * port it yourself.
  */

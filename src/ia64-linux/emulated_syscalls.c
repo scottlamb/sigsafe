@@ -1,5 +1,5 @@
 /** @file
- * Emulated system calls on x86_64-linux.
+ * Emulated system calls on ia64-linux.
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.
