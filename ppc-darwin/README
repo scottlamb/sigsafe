@@ -1,0 +1,9 @@
+$Id$
+
+See <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/> - Apple's
+implementation of these functions. What's here is strongly influenced by their
+code. (It is thus under the APSL 2.0.)
+
+<http://www.securiteam.com/securityreviews/PPC_OSX_Shellcode_Assembly.pdf>
+also looks helpful. It talks about shellcode, but it has some useful small
+examples.
