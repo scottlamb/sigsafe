@@ -12,7 +12,9 @@ SYSCALL(readv, 3)
 SYSCALL(write, 3)
 SYSCALL(writev, 3)
 SYSCALL(select, 5)
+#ifdef HAVE_KEVENT
 SYSCALL(kevent, 6)
+#endif
 SYSCALL(wait4, 4)
 SYSCALL(accept, 3)
 SYSCALL(connect, 3)

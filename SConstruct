@@ -33,11 +33,6 @@ env = Environment(
 
 env.Append(LIBS = ['pthread'])
 
-if os_name == 'darwin' and arch == 'ppc':
-    env.Append(CPPDEFINES = ['HAVE_KEVENT'])
-elif os_name == 'linux' and arch == 'i386':
-    env.Append(CPPDEFINES = ['HAVE_POLL','HAVE_EPOLL'])
-
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])
     if type == 'debug':
@@ -45,6 +40,20 @@ if env['CC'] == 'gcc':
     else:
         env.Append(CPPDEFINES=['NDEBUG'],CCFLAGS=['-O2'],LINKFLAGS=['-O2'])
 
+conf = env.Configure()
+
+# Manually excluding Darwin from poll() because they have a poll() that
+# is emulated poorly with select().
+if os_name != 'darwin':
+    conf.env.Append(CPPDEFINES = ['HAVE_POLL'])
+
+if conf.CheckFunc('kevent'):
+    conf.env.Append(CPPDEFINES = ['HAVE_KEVENT'])
+
+if conf.CheckFunc('epoll_wait'):
+    conf.env.Append(CPPDEFINES = ['HAVE_EPOLL'])
+
+env = conf.Finish()
 Export('env')
 BuildDir(buildDir, 'src', 0)
 SConscript(buildDir + '/SConscript')
