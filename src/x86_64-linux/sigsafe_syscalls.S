@@ -7,12 +7,6 @@
 #include <asm/unistd.h>
 #include <asm/errno.h>
 
-#ifdef _THREAD_SAFE
-.comm sigsafe_key,4
-#else
-.comm sigsafe_data,24
-#endif
-
 #define SYSCALL(name, args)                                             ;\
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
@@ -21,15 +15,15 @@ LABEL(sigsafe_##name)                                                   ;\
         SETUP_ARGS_##args                                               ;\
         testq   %rax,%rax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-LABEL(_sigsafe_##name##_minjmp)                                         ;\
+LABEL(sigsafe_##name##_minjmp_)                                         ;\
         cmpl    $0,(%rax)                                               ;\
-        jne     _sigsafe_##name##_jmpto                                 ;\
+        jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movq    $__NR_##name,%rax                                       ;\
-LABEL(_sigsafe_##name##_maxjmp)                                         ;\
+LABEL(sigsafe_##name##_maxjmp_)                                         ;\
         syscall                                                         ;\
         ret                                                             ;\
-LABEL(_sigsafe_##name##_jmpto)                                          ;\
+LABEL(sigsafe_##name##_jmpto_)                                          ;\
         movq    $-EINTR,%rax                                            ;\
         ret                                                             ;\
 .size sigsafe_##name, . - sigsafe_##name
@@ -100,12 +94,12 @@ label:
 #ifdef _THREAD_SAFE
 #define LOAD_TSD(args) \
         SAVE_REGS_##args                                                    ;\
-        movl    sigsafe_key(%rip), %edi                                     ;\
+        movl    sigsafe_key_(%rip), %edi                                    ;\
         call    pthread_getspecific@PLT                                     ;\
         RESTORE_REGS_##args
 #else
 #define LOAD_TSD(args) \
-        movq    sigsafe_data(%rip),%rax
+        movq    sigsafe_data_(%rip),%rax
 #endif
 
 #include "syscalls.h"

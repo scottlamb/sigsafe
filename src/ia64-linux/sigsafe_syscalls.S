@@ -9,12 +9,6 @@
 #include <asm/errno.h>
 
 #ifdef _THREAD_SAFE
-.comm sigsafe_key_,4
-#else
-.comm sigsafe_data_,24
-#endif
-
-#ifdef _THREAD_SAFE
 #define outputs 1 /* to pthread_getspecific */
 #else
 #define outputs 0

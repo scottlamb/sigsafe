@@ -55,7 +55,7 @@ extern "C" {
  * @see sigsafe_install_handler
  */
 #ifdef SIGSAFE_NO_SIGINFO
-typedef void (*sigsafe_user_handler_t)(int, int, struct siginfo*, intptr_t);
+typedef void (*sigsafe_user_handler_t)(int, int, struct sigcontext*, intptr_t);
 #else
 typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
 #endif
@@ -87,11 +87,16 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler);
  * Before this is called for a given thread, "safe" signals delivered to that
  * thread will be silently ignored. If you are concerned about signals
  * delivered at thread startup, ensure threads start with blocked signals.
+ * @note This function still must be called for single-threaded compiles.
  * @pre This function has not previously been called in this thread.
  * @param userdata   Thread-specific user data which will be delivered to your
  *                   handler routine with every signal.
  * @param destructor An optional destructor for userdata, to be run at thread
- *                   exit.
+ *                   exit. It is unspecified whether this runs for the final
+ *                   thread to exit - TSD destructors are used to clean up
+ *                   memory, and that happens on process exit automatically.
+ *                   Some pthread implementations vary. In single-threaded
+ *                   compiles, this will be ignored.
  */
 int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
 

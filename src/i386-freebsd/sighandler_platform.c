@@ -17,7 +17,7 @@ void sigsafe_handler_for_platform_(ucontext_t *ctx) {
     eip = (void*) ctx->uc_mcontext.mc_eip;
     for (s = sigsafe_syscalls_; s->minjmp != NULL; s++) {
         if (s->minjmp <= eip && eip <= s->maxjmp) {
-#ifdef ORG_SLAMB_SIGSAFE_DEBUG_JUMP
+#ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);
 #endif
             ctx->uc_mcontext.mc_eip = (int) s->jmpto;

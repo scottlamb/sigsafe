@@ -7,19 +7,21 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define ORG_SLAMB_SIGSAFE_INTERNAL
 #include <stdio.h>
 #include <signal.h>
+#ifdef _THREAD_SAFE
 #include <pthread.h>
+#endif
 #include <setjmp.h>
-#include "sigsafe.h"
 #include "sigsafe_internal.h"
 
 #define mysizeof(x) ((unsigned long) sizeof(x))
 
 int main(void) {
     printf("sizeof(sigset_t) == %lu\n", mysizeof(sigset_t));
+#ifdef _THREAD_SAFE
     printf("sizeof(pthread_key_t) == %lu\n", mysizeof(pthread_key_t));
+#endif
     printf("sizeof(sig_atomic_t) == %lu\n", mysizeof(sig_atomic_t));
     printf("sizeof(jmp_buf) == %lu\n", mysizeof(jmp_buf));
     printf("sizeof(void*) == %lu\n", mysizeof(void**));

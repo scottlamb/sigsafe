@@ -7,8 +7,7 @@
  * @author      Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
-#define ORG_SLAMB_SIGSAFE_INTERNAL
-#include <sigsafe.h>
+#include "sigsafe_internal.h"
 #include <ucontext.h>
 #include <unistd.h>
 
@@ -18,7 +17,7 @@ void sigsafe_handler_for_platform_(ucontext_t *ctx) {
     pc = (void*) ctx->uc_mcontext.gregs[REG_PC];
     for (s = sigsafe_syscalls; s->address != NULL; s++) {
         if (s->minjmp <= pc && pc <= s->maxjmp) {
-#ifdef ORG_SLAMB_SIGSAFE_DEBUG_JUMP
+#ifdef SIGSAFE_DEBUG_JUMP
             write(2, "[J]", 3);
 #endif
             ctx->uc_mcontext.gregs[REG_PC ] = (long) s->jmpto;

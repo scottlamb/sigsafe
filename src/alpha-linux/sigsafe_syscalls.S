@@ -36,12 +36,6 @@
  * a3 on exit is zero on success
  */
 
-#ifdef _THREAD_SAFE
-.comm sigsafe_key_,4
-#else
-.comm sigsafe_data_,24
-#endif
-
 #define SYSCALL(name, args)                                              \
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
@@ -124,13 +118,13 @@ $sigsafe_##name##_error:                                                ;\
         ldgp    gp,0(ra)                                                ;\
         SAVERESTORE_REGS_##args(ldq)
 #else
+#define START(args) \
         .frame  sp,8,ra                                                 ;\
         .mask   SAVEDMASK_0,-8                                          ;\
         ldgp    gp,0(pv)                                                ;\
-        lda     sp,-8*args(sp)                                          ;\
+        lda     sp,-8(sp)                                               ;\
         .prologue 1                                                     ;\
-        lda     t0, sigsafe_key_                                        ;\
-        ldl     v0, 0(t0)
+        lda     v0, sigsafe_data_
 #endif
 
 #include "syscalls.h"

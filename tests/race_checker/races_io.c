@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
-#include <pthread.h>
 #include <errno.h>
 #include <sigsafe.h>
 #include "race_checker.h"

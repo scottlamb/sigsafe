@@ -43,7 +43,7 @@ double doublify_timeval(const struct timeval *tv) {
 
 int main(void) {
     struct sockaddr_in server_addr;
-    int server_addr_len = sizeof(struct sockaddr_in);
+    unsigned long server_addr_len = sizeof(struct sockaddr_in);
     int listen_fd, connected_fd;
     int retval;
     struct timeval timeout, old_time, new_time;
@@ -60,7 +60,7 @@ int main(void) {
     error_wrap(listen(listen_fd, 5), "listen");
     if (error_wrap(fork(), "fork") == 0) {
         struct sockaddr_in originating_addr;
-        int originating_addr_len = sizeof(struct sockaddr_in);
+        unsigned long originating_addr_len = sizeof(struct sockaddr_in);
         int accepted_fd;
 
         /* Accept the connection, wait for it to be closed, then die. */

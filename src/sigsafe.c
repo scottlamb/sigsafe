@@ -51,7 +51,7 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd_ *sigsafe_data_ = pthread_getspecific(sigsafe_key_);
 #endif
     assert(0 < signum && signum <= SIGSAFE_SIGMAX);
-#ifdef ORG_SLAMB_SIGSAFE_DEBUG_SIGNAL
+#ifdef SIGSAFE_DEBUG_SIGNAL
     write(2, "[S]", 3);
 #endif
     if (sigsafe_data_ != NULL) {
@@ -72,14 +72,12 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 #ifdef _THREAD_SAFE
 static void tsd_destructor(void* tsd_v) {
     struct sigsafe_tsd_ *sigsafe_data_ = (struct sigsafe_tsd_*) tsd_v;
-#else
-static void tsd_destructor(void) {
-#endif
     if (sigsafe_data_->destructor != NULL) {
         sigsafe_data_->destructor(sigsafe_data_->user_data);
     }
     free(sigsafe_data_);
 }
+#endif
 
 static void sigsafe_init(void) {
     /* "volatile" so our seemingly-useless references aren't optimized away. */
@@ -87,8 +85,6 @@ static void sigsafe_init(void) {
 
 #ifdef _THREAD_SAFE
     pthread_key_create(&sigsafe_key_, &tsd_destructor);
-#else
-    atexit(&tsd_destructor);
 #endif
 
     /*

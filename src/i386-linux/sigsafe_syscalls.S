@@ -33,12 +33,6 @@
  * %edi      arg 5                               preserve
  */
 
-#ifdef _THREAD_SAFE
-.comm sigsafe_key_,4
-#else
-.comm sigsafe_data_,12
-#endif
-
 #define SYSCALL(name, args)                                             ;\
 .text                                                                   ;\
 .type sigsafe_##name,@function                                          ;\
@@ -50,16 +44,16 @@ sigsafe_##name:                                                         ;\
         SETUP_ARGS_##args                                               ;\
         testl   %eax,%eax                                               ;\
         je      L_sigsafe_##name##_nocompare                            ;\
-HIDDEN(sigsafe_##name##_minjmp_)                                         ;\
+HIDDEN(sigsafe_##name##_minjmp_)                                        ;\
         cmp     $0,(%eax)                                               ;\
         jne     sigsafe_##name##_jmpto_                                 ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movl    $__NR_##name,%eax                                       ;\
-HIDDEN(sigsafe_##name##_maxjmp_)                                         ;\
+HIDDEN(sigsafe_##name##_maxjmp_)                                        ;\
         int     $0x80                                                   ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\
-HIDDEN(sigsafe_##name##_jmpto_)                                          ;\
+HIDDEN(sigsafe_##name##_jmpto_)                                         ;\
         movl    $-EINTR,%eax                                            ;\
         RESTORE_REGS_##args                                             ;\
         ret                                                             ;\

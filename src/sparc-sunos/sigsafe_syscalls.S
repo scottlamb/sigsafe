@@ -9,12 +9,6 @@
 #include <sys/syscall.h>
 #include <sys/errno.h>
 
-#ifdef _THREAD_SAFE
-.comm sigsafe_key, 4
-#else
-.comm sigsafe_data, 12
-#endif
-
 /*
  * The tricky things to remember below are:
  *
@@ -73,14 +67,14 @@ $sigsafe_##name##_out:                                              ;\
 #ifdef _THREAD_SAFE
 #define LOAD_TSD \
         save    %sp,-96,%sp                                         ;\
-        set     sigsafe_key, %g1                                    ;\
+        set     sigsafe_key_, %g1                                   ;\
         call    pthread_getspecific                                 ;\
         ld      [%g1], %o0                                          ;\
         mov     %o0, %g2                                            ;\
         restore
 #else
 #define LOAD_TSD \
-        set     sigsafe_data, %g1                                   ;\
+        set     sigsafe_data_, %g1                                  ;\
         ld      [%g1], %g2
 #endif
 

@@ -19,7 +19,8 @@ if os_name == 'osf1':
     # cc doesn't like assembling for us. Workaround.
     source.append(env.Command(platform_subdir + '/sigsafe_syscalls.o',
                 platform_subdir + '/sigsafe_syscalls.S',
-                "$AS -I#/src -I#/src/" + platform_subdir + " -o $TARGET $SOURCES"))
+                "$AS $_CPPDEFFLAGS -I#/src -I#/src/" + platform_subdir
+                + " -o $TARGET $SOURCES"))
 else:
     source.append(platform_subdir + '/sigsafe_syscalls.S')
 

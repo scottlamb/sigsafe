@@ -42,20 +42,14 @@
  * if the kernel return an error, setup a valid gp and jmp to _cerror
  */
 
-#ifdef _THREAD_SAFE
-.comm sigsafe_key_,4
-#else
-.comm sigsafe_data_,24
-#endif
-
 #define SYSCALL(name, args)                                              \
 .text                                                                   ;\
 .globl sigsafe_##name                                                   ;\
 .ent sigsafe_##name                                                     ;\
 sigsafe_##name:                                                         ;\
-        START                                                           ;\
+        START(args)                                                     ;\
         beq     v0, $sigsafe_##name##_nocompare                         ;\
-LABEL(_sigsafe_##name##_minjmp)                                         ;\
+LABEL(sigsafe_##name##_minjmp_)                                         ;\
         ldl     t0, 0(v0)                                               ;\
         bne     t0, sigsafe_##name##_jmpto_                             ;\
 $sigsafe_##name##_nocompare:                                            ;\
@@ -130,14 +124,13 @@ $sigsafe_##name##_error:                                                ;\
         ldgp    gp,0(ra)                                                ;\
         SAVERESTORE_REGS_##args(ldq)
 #else
-#define START(args)
+#define START(args) \
         .frame  sp,8,ra                                                 ;\
         .mask   SAVEDMASK_0,-8                                          ;\
         ldgp    gp,0(pv)                                                ;\
         lda     sp,-8(sp)                                               ;\
         .prologue 1                                                     ;\
-        lda     t0, sigsafe_data_                                       ;\
-        ldl     v0, 0(t0)
+        lda     v0, sigsafe_data_
 #endif
 
 #include "syscalls.h"
