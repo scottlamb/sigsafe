@@ -33,9 +33,7 @@ void sigusr1_handler(int signum) { sigusr1_received = 1; }
 void sigalrm_handler(int signum) { sigalrm_received = 1; }
 
 int main(void) {
-    sigset_t usr1_set;
     sigset_t empty;
-    struct timespec ts;
     struct sigaction sa;
     sigset_t pending;
     int retval;
