@@ -11,21 +11,95 @@
 /**
  * @mainpage sigsafe library for safe signal handling.
  * sigsafe is a C library for safely, reliably, and promptly handling signals
- * delivered to specific threads without significant overhead. This is a
- * common and challenging problem, and sigsafe can help. Please see below for
- * examples.
+ * delivered to specific threads without significant overhead. It includes
+ * documentation, a performance benchmark, and a correctness tester that
+ * exhaustively searches for race conditions with the <tt>ptrace(2)</tt>
+ * facility.
  *
- * sigsafe includes code, documentation, a performance benchmark, and a
- * correctness tester that exhaustively searches for race conditions with
- * the <tt>ptrace(2)</tt> facility.
+ * The meat of the library is a set of alternate system call wrappers with the
+ * following behavior when interrupted by a signal. Their chief difference is
+ * when they return <tt>EINTR</tt>:
+ *
+ * <table>
+ *   <tr>
+ *     <td>Signal arrival</td>
+ *     <td>Raw system call</td>
+ *     <td>System call + flag</td>
+ *     <td>System call + <tt>longjmp()</tt>
+ *     <td>sigsafe system call</td>
+ *   </tr>
+ *   <tr>
+ *     <td>Well before entering kernel</td>
+ *     <td style="background-color: #f88">No</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *   </tr>
+ *   <tr>
+ *     <td>Right before entering kernel</td>
+ *     <td style="background-color: #f88">No</td>
+ *     <td style="background-color: #f88">No</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *   </tr>
+ *   <tr>
+ *     <td>While in kernel</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *     <td style="background-color: #8f8">Yes</td>
+ *   </tr>
+ *   <tr>
+ *     <td>Right after exiting kernel</td>
+ *      <td style="background-color: #8f8">No</td>
+ *      <td style="background-color: #8f8">No</td>
+ *      <td style="background-color: #f88">Yes</td>
+ *      <td style="background-color: #8f8">No</td>
+ *   </tr>
+ * </table>
+ *
+ * This allows for correct signal handling with a broad range of system calls.
+ * There <i>are</i> other ways of correct signal handling, but I believe
+ * sigsafe is often superior because of its relative ease and good
+ * performance.
+ *
+ * <h3>Implementation</h3>
+ *
+ * sigsafe is implemented through a set of system call wrappers implemented in
+ * assembly for each platform. The system call wrappers retrieve a "signal
+ * received" flag from memory and return <tt>EINTR</tt> if it is true shortly
+ * before entering the kernel. If a signal is received after this value is
+ * retrieved, <tt>sigsafe</tt>'s signal handler manually adjusts the
+ * instruction pointer to force <tt>EINTR</tt> return.
+ *
+ * It sounds like a horrible kludge (and maybe it is), but it works reliably
+ * and performs well.  But don't take my word for it - verify it yourself with
+ * the included race condition checker and benchmarks.
+ *
+ * <h3>Additional information</h3>
+ *
+ * - @link background Background information. @endlink
+ *   If everything above was confusing to you, this should help you understand
+ *   what signals are, why most code does not handle them safely, and how your
+ *   code can.
+ * - @link goalref Goal-based reference. @endlink
+ *   For writing new code. (I want to wait for blocking IO
+ *   or a timeout, how should I do that?)
+ * - @link patternref Pattern-based reference. @endlink
+ *   For auditing existing code. (Is this code safe? Does it
+ *   perform as well as it could? Is it portable?)
+ *
+ * <h3>Availability</h3>
  *
  * sigsafe is available for Linux/i386 and Darwin/ppc (OS X). More platforms
  * should be ready soon.
  *
  * Please look at the <tt>README</tt> file for installation notes and porting
  * hints.
- *
- * <h2>Background</h2>
+ */
+
+/**
+ * @page background Background
  *
  * (This section is intended to describe what signals are, how they are
  * useful, and the evolution of mechanisms to handle them safely. If you're
@@ -264,9 +338,20 @@
  *
  * (Watch this space. There are several other solutions to the problem that I
  * mention below. I intend to describe them in more detail here.)
- *
- * <h2>Signal handling patterns without sigsafe</h2>
- * This library is designed to replace the following problematic patterns:
+ */
+
+/**
+ * @page goalref Goal reference
+ * This <i>will</i> contain a list of common goals (such as waiting for a
+ * child to exit with a timeout) and recommended methods to do so. The
+ * recommendations will always feature the sigsafe way and at least one way
+ * without sigsafe. In some cases, signals may not be the best way at all.
+ */
+
+/**
+ * @page patternref Pattern reference
+ * Below are a list of signal handling patterns with associated safety,
+ * performance, and portability notes.
  * <ol>
  * <li>Calling async signal-unsafe functions from signal handlers.
  * @code
