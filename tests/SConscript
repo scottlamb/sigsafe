@@ -22,7 +22,8 @@ for i in [ #flags        #postfix
           (['DO_SAFE'],  'safe'),
           (['DO_SETJMP'],'setjmp'),
           (['DO_SELECT'],'select')]:
-    obj = env.StaticObject(target = 'bench_read_' + i[1] + '.o',
-                           source = 'bench_read.c',
-                           CPPDEFINES = i[0])
-    env.Program(target = 'bench_read_' + i[1], source = obj)
+    myenv = env.Copy()
+    myenv.Append(CPPDEFINES = i[0])
+    obj = myenv.StaticObject(target = 'bench_read_' + i[1] + '.o',
+                             source = 'bench_read.c')
+    myenv.Program(target = 'bench_read_' + i[1], source = obj)
