@@ -15,78 +15,21 @@ pthread_key_t sigsafe_key;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 sigsafe_user_handler_t user_handlers[SIGSAFE_NSIG];
 
-extern void *_sigsafe_read_minjmp;
-extern void *_sigsafe_read_maxjmp;
-extern void *_sigsafe_read_jmpto;
-#if 0
-extern void *_sigsafe_write_minjmp;
-extern void *_sigsafe_write_maxjmp;
-extern void *_sigsafe_write_jmpto;
-extern void *_sigsafe_readv_minjmp;
-extern void *_sigsafe_readv_maxjmp;
-extern void *_sigsafe_readv_jmpto;
-extern void *_sigsafe_writev_minjmp;
-extern void *_sigsafe_writev_maxjmp;
-extern void *_sigsafe_writev_jmpto;
-#ifdef HAVE_EPOLL_WAIT
-extern void *_sigsafe_epoll_wait_minjmp;
-extern void *_sigsafe_epoll_wait_maxjmp;
-extern void *_sigsafe_epoll_wait_jmpto;
-#endif
-extern void *_sigsafe_kevent_minjmp;
-extern void *_sigsafe_kevent_maxjmp;
-extern void *_sigsafe_kevent_jmpto;
-extern void *_sigsafe_select_minjmp;
-extern void *_sigsafe_select_maxjmp;
-extern void *_sigsafe_select_jmpto;
-#ifdef HAVE_POLL
-extern void *_sigsafe_poll_minjmp;
-extern void *_sigsafe_poll_maxjmp;
-extern void *_sigsafe_poll_jmpto;
-#endif
-extern void *_sigsafe_wait4_minjmp;
-extern void *_sigsafe_wait4_maxjmp;
-extern void *_sigsafe_wait4_jmpto;
-extern void *_sigsafe_accept_minjmp;
-extern void *_sigsafe_accept_maxjmp;
-extern void *_sigsafe_accept_jmpto;
-extern void *_sigsafe_connect_minjmp;
-extern void *_sigsafe_connect_maxjmp;
-extern void *_sigsafe_connect_jmpto;
-#ifdef HAVE_NANOSLEEP
-/*
- * On Darwin, this is implemented in terms of some Mach thing instead of a
- * normal system call.
- */
-extern void *_sigsafe_nanosleep_minjmp;
-extern void *_sigsafe_nanosleep_maxjmp;
-extern void *_sigsafe_nanosleep_jmpto;
-#endif
-#endif
+#define SYSCALL(name, args) \
+        extern void *_sigsafe_##name##_minjmp; \
+        extern void *_sigsafe_##name##_maxjmp; \
+        extern void *_sigsafe_##name##_jmpto;
+#include "syscalls.h"
+#undef SYSCALL
 
+#define SYSCALL(name, args) \
+        { #name, &sigsafe_##name, &_sigsafe_##name##_minjmp, \
+          &_sigsafe_##name##_maxjmp, &_sigsafe_##name##_jmpto },
 struct sigsafe_syscall sigsafe_syscalls[] = {
-    { "read",       &sigsafe_read,       &_sigsafe_read_minjmp,       &_sigsafe_read_maxjmp,       &_sigsafe_read_jmpto       },
-#if 0
-    { "readv",      &sigsafe_readv,      &_sigsafe_readv_minjmp,      &_sigsafe_read_maxjmp,       &_sigsafe_read_jmpto       },
-    { "write",      &sigsafe_write,      &_sigsafe_write_minjmp,      &_sigsafe_write_maxjmp,      &_sigsafe_write_jmpto      },
-    { "writev",     &sigsafe_writev,     &_sigsafe_writev_minjmp,     &_sigsafe_write_maxjmp,      &_sigsafe_write_jmpto      },
-#ifdef HAVE_EPOLL_WAIT
-    { "epoll_wait", &sigsafe_epoll_wait, &_sigsafe_epoll_wait_minjmp, &_sigsafe_epoll_wait_maxjmp, &_sigsafe_epoll_wait_jmpto },
-#endif
-    { "kevent",     &sigsafe_kevent,     &_sigsafe_kevent_minjmp,     &_sigsafe_kevent_maxjmp,     &_sigsafe_kevent_maxjmp    },
-    { "select",     &sigsafe_select,     &_sigsafe_select_minjmp,     &_sigsafe_select_maxjmp,     &_sigsafe_select_maxjmp    },
-#ifdef HAVE_POLL
-    { "poll",       &sigsafe_poll,       &_sigsafe_poll_minjmp,       &_sigsafe_poll_maxjmp,       &_sigsafe_poll_jmpto       },
-#endif
-    { "wait4",      &sigsafe_wait4,      &_sigsafe_wait4_minjmp,      &_sigsafe_wait4_maxjmp,      &_sigsafe_wait4_jmpto      },
-    { "accept",     &sigsafe_accept,     &_sigsafe_accept_minjmp,     &_sigsafe_accept_maxjmp,     &_sigsafe_accept_jmpto     },
-    { "connect",    &sigsafe_connect,    &_sigsafe_connect_minjmp,    &_sigsafe_connect_maxjmp,    &_sigsafe_connect_jmpto    },
-#ifdef HAVE_NANOSLEEP
-    { "nanosleep",  &sigsafe_nanosleep,  &_sigsafe_nanosleep_minjmp,  &_sigsafe_nanosleep_maxjmp,  &_sigsafe_nanosleep_jmpto  },
-#endif
-#endif
-    { NULL,         NULL,                NULL,                       NULL,                       NULL                      }
+#include "syscalls.h"
+    { NULL, NULL, NULL, NULL, NULL }
 };
+#undef SYSCALL
 
 static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
     struct sigsafe_tsd *tsd = pthread_getspecific(sigsafe_key);
@@ -154,7 +97,6 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
 
 intptr_t sigsafe_clear_received(void) {
     struct sigsafe_tsd *tsd;
-    int retval;
 
     tsd = (struct sigsafe_tsd*) pthread_getspecific(sigsafe_key);
     assert(tsd != NULL);

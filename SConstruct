@@ -15,7 +15,8 @@ buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
 
 env = Environment(
     CPPPATH = [
-        '#/src'
+        '#/src',
+        '#/src/' + arch + '-' + os_name
     ],
     CPPDEFINES = [
         '_XOPEN_SOURCE=600',
@@ -28,6 +29,9 @@ env = Environment(
 )
 
 env.Append(LIBS = ['pthread'])
+
+if os_name == 'darwin':
+    env.Append(CPPDEFINES = ['HAVE_KEVENT'])
 
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])

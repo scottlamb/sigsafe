@@ -16,12 +16,13 @@
 
 .comm sigsafe_key,4
 
+define(SYSCALL, [
 .text
-.type sigsafe_read,@function
-.global sigsafe_read
-sigsafe_read:
+.type sigsafe_$1,@function
+.global sigsafe_$1
+sigsafe_$1:
         pushl   sigsafe_key
-        call    pthread_getspecific
+        call    pth$1_getspecific
         pop     %ecx
         push    %edi
         push    %ebx
@@ -31,22 +32,25 @@ sigsafe_read:
         movl    0x14(%edi),%edx
         testl   %eax,%eax
         je      nocompare
-.global _sigsafe_read_minjmp
-_sigsafe_read_minjmp:
+.global _sigsafe_$1_minjmp
+_sigsafe_$1_minjmp:
         cmp     $0,(%eax)
-        jne     _sigsafe_read_jmpto
+        jne     _sigsafe_$1_jmpto
 nocompare:
-        movl    $__NR_read,%eax
-.global _sigsafe_read_maxjmp
-_sigsafe_read_maxjmp:
+        movl    $__NR_$1,%eax
+.global _sigsafe_$1_maxjmp
+_sigsafe_$1_maxjmp:
         int     $0x80
         pop     %ebx
         pop     %edi
         ret
-.global _sigsafe_read_jmpto
-_sigsafe_read_jmpto:
+.global _sigsafe_$1_jmpto
+_sigsafe_$1_jmpto:
         movl    $-EINTR,%eax
         pop     %ebx
         pop     %edi
         ret
-.size sigsafe_read, . - sigsafe_read
+.size sigsafe_$1, . - sigsafe_$1
+])
+
+include([syscalls.h])

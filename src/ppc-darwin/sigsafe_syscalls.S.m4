@@ -47,15 +47,6 @@ LABEL(__sigsafe_$1_maxjmp)
 LABEL(__sigsafe_$1_jmpto)
         li      r3,-EINTR
         RETURN
-
 ])
 
-SYSCALL(read, 3)
-SYSCALL(readv, 3)
-SYSCALL(write, 3)
-SYSCALL(writev, 3)
-SYSCALL(select, 5)
-SYSCALL(kevent, 6)
-SYSCALL(wait4, 4)
-SYSCALL(accept, 3)
-SYSCALL(connect, 3)
+include([syscalls.h])
