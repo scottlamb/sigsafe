@@ -16,29 +16,29 @@
  * exhaustively searches for race conditions with the <tt>ptrace(2)</tt>
  * facility.
  *
- * The meat of the library is a set of alternate system call wrappers with the
- * following behavior when interrupted by a signal. Their chief difference is
- * when they return <tt>EINTR</tt>:
+ * The meat of the library is a set of alternate system call wrappers. Check
+ * out the following table, which shows when signals cause system calls to
+ * return immediately:
  *
  * <table>
  *   <tr>
- *     <td>Signal arrival</td>
- *     <td>Raw system call</td>
- *     <td>System call + flag</td>
- *     <td>System call + <tt>longjmp()</tt>
- *     <td>sigsafe system call</td>
+ *     <th align="left">Signal arrival</th>
+ *     <th align="left">normal syscall + null handler</th>
+ *     <th align="left">normal syscall + flag handler</th>
+ *     <th align="left">normal syscall + <tt>longjmp()</tt> handler</th>
+ *     <th align="left">sigsafe syscall</th>
  *   </tr>
  *   <tr>
  *     <td>Well before entering kernel</td>
- *     <td style="background-color: #f88">No</td>
+ *     <td style="background-color: #f88">No (signal lost)</td>
  *     <td style="background-color: #8f8">Yes</td>
  *     <td style="background-color: #8f8">Yes</td>
  *     <td style="background-color: #8f8">Yes</td>
  *   </tr>
  *   <tr>
  *     <td>Right before entering kernel</td>
- *     <td style="background-color: #f88">No</td>
- *     <td style="background-color: #f88">No</td>
+ *     <td style="background-color: #f88">No (signal lost)</td>
+ *     <td style="background-color: #f88">No (signal noted)</td>
  *     <td style="background-color: #8f8">Yes</td>
  *     <td style="background-color: #8f8">Yes</td>
  *   </tr>
@@ -51,17 +51,24 @@
  *   </tr>
  *   <tr>
  *     <td>Right after exiting kernel</td>
- *      <td style="background-color: #8f8">No</td>
- *      <td style="background-color: #8f8">No</td>
- *      <td style="background-color: #f88">Yes</td>
- *      <td style="background-color: #8f8">No</td>
+ *      <td style="background-color: #8f8">No (normal return)</td>
+ *      <td style="background-color: #8f8">No (normal return)</td>
+ *      <td style="background-color: #f88">Yes (clobbers syscall return)</td>
+ *      <td style="background-color: #8f8">No (normal return)</td>
  *   </tr>
  * </table>
  *
- * This allows for correct signal handling with a broad range of system calls.
- * There <i>are</i> other ways of correct signal handling, but I believe
- * sigsafe is often superior because of its relative ease and good
- * performance.
+ * All sigsafe system calls:
+ *
+ * - consistently return immediately with <tt>EINTR</tt> if a signal arrives
+ *   right before kernel entry.
+ * - consistently return immediately with the normal result if a signal
+ *   arrives right after kernel exit.
+ *
+ * It is not possible to create these guarantees with the standard system call
+ * wrappers. And they are extremely useful guarantees - you can handle many
+ * signals safely without them, but often with a performance penalty or with
+ * great difficulty.
  *
  * <h3>Implementation</h3>
  *
