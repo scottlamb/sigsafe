@@ -213,7 +213,7 @@
  *
  *  ...
  *
- * void* thread_entry(void*) {
+ * void* thread_entry(void *arg) {
  *     ...
  *     sigsafe_install_tsd((intptr_t) malloc(sizeof sigset_t), &free);
  *     ...
@@ -222,7 +222,7 @@
  * void read_some_data(void) {
  *     int retval;
  *
- *     while ((retval = sigsafe_read(fd, buf, count)) == EINTR) {
+ *     while ((retval = sigsafe_read(fd, buf, count)) == -EINTR) {
  *         sigset_t *received = (sigset_t*) sigsafe_clear_received();
  *         if (sigismember(received, SIGUSR1)) {
  *             printf("Received USR1 signal\n");
