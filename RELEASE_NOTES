@@ -2,11 +2,20 @@ $Id$
 
 sigsafe version 0.1.3-dev release notes:
 
-* Linux/i386 appears to be working perfectly.
+* Most existing platforms work without problems.
 
-* Linux/alpha has mixed results:
+* The FreeBSD and NetBSD builds, by default, are single-threaded only.
+  I'd be interested to hear from people who have tried multi-threaded versions
+  on the -CURRENT versions of these systems. Older versions do not have a
+  suitable threading library.
 
-  - On a single-processor system, it appears to work perfectly. Details:
+* The race condition checker is only working on Linux. I'd appreciate any help
+  porting it to other systems; it has proved unexpectedly difficult.
+
+* There appears to be, ironically, a race condition in the checker on
+  Linux/alpha. I suspect a kernel bug. Details:
+
+  - On a single-processor system, it appears to work perfectly. Machine specs:
 
     spe141.testdrive.compaq.com:
     - Alpha XP1000a
@@ -19,7 +28,7 @@ sigsafe version 0.1.3-dev release notes:
 
   - On three different SMP systems, the race condition checker often fails -
     the child dies with SIGTRAP. I think this is not a real problem with the
-    code being checked, but rather a race in ptrace() itself. Machine details:
+    code being checked, but rather a race in ptrace() itself. Machine specs:
 
     spe144.testdrive.compaq.com:
     - Alpha ES40
@@ -39,22 +48,6 @@ sigsafe version 0.1.3-dev release notes:
     - kernel 2.4.9-32.5smp
     - glibc 2.2.4-29
 
-* The FreeBSD/x86 support is preliminary:
-
-  - With LinuxThreads, sigaction returns -1/EINVAL in sigsafe_install_handler.
-    No handler is installed. Not sure why.
-
-  - I don't have access to a machine with FreeBSD 5.X and a KSE-based pthread
-    library. I'd like to hear reports of success or failure from people who
-    do.
-
-  - Don't use it with user thread libraries (-pthread under FreeBSD 4.X).
-    sigsafe does not support them and never will. (Symptoms: simple_test will
-    return EAGAIN if no input is available when it does the read.)
-
-  - The race condition checker doesn't compile. No si_code constants; probably
-    not too hard to fix, but I haven't yet.
-
 * The documentation is improved, but it still has a ways to go:
 
   - The "Background" section stops abruptly. There are a lot more topics to
@@ -62,6 +55,11 @@ sigsafe version 0.1.3-dev release notes:
   - The "Pattern reference" could use more explanation and should be adapted
     to use the same terminology.
   - The "Goal reference" doesn't really exist yet.
+  - The "Porting" section is missing the step-by-step tour.
+  - The "Performance" section is missing the shiny microbenchmark graphs. More
+    importantly, it's missing real-world performance tests to determine if
+    sigsafe's possible speed advantage is significant in a real system.
+  - The section about behavior of existing system calls could use bulking out.
 
   If you spot anything wrong with what's already there, please let me know. If
   it's unclear to you, odds are it is to someone else, too. And if it seems
@@ -69,29 +67,3 @@ sigsafe version 0.1.3-dev release notes:
 
   Patches to add new documentation are also welcome. But saying "it's just not
   there" doesn't help - I already know that.
-
-* The race checker is in pretty good shape now on Linux/x86.
-  Try it out with "tests/race_checker/race_checker -qm" for a quick test.
-
-* The race checker still doesn't work under Darwin. It will give
-  results like this:
-
-    $ ./race_checker -qm
-    Running sigsafe_read test
-    attached
-    stepped once
-
-    ERROR: Child was killed/dump from signal 5.
-
-    ...
-
-      Test                 Result               Expected            
-    ----------------------------------------------------------------
-    * sigsafe_read         misc. failure        success             
-    * racebefore_read      misc. failure        ignored signal      
-    * raceafter_read       misc. failure        forgotten result    
-
-    * - These 3 tests did not return the expected result.
-
-  signal 5 is SIGTRAP. I need to find out how to intercept this so the child
-  does not die.

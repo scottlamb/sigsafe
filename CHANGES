@@ -1,6 +1,43 @@
 $Id$
 
-sigsafe-0.1.2
+sigsafe-0.1.3 (in progress)
+-------------
+
+* Added support for several platforms:
+
+  - Linux/alpha
+  - Linux/ia64
+  - Linux/x86_64
+  - NetBSD/i386
+  - Solaris/sparc
+  - Tru64/alpha
+
+* A split into single-threaded and multi-threaded versions, to support
+  platforms with poor thread support. (*BSD systems.)
+
+* Build system improvements.
+
+  - The .sconf_temp and test directories are built in per-platform
+    directories, along with the main system, so it's easier to share a build
+    directory between many different platforms. (This makes testing on
+    SourceForge's compile farm and HP's test drive systems easier.)
+
+  - The single "scons" command will also build single-threaded and
+    multi-threaded versions, where available.
+
+  - The SConstruct file is more readable, with numerous comments. It should be
+    easy to change, even for people who have never seen scons before.
+
+* Better hiding of implementation details:
+
+  - a separate header for internal functions
+  - more static variables
+  - private functions are marked with __attribute((visibility("private")))
+    where available, always suffixed with _ to mark them as such.
+
+* Documentation improvements, mostly notes about porting to new systems.
+
+sigsafe-0.1.2 (released 1 May 2004)
 -------------
 
 * Added preliminary support for FreeBSD. (See RELEASE_NOTES.)
@@ -16,7 +53,7 @@ sigsafe-0.1.2
 
 * Workarounds for RedHat 9's half-completed epoll.
 
-sigsafe-0.1.1
+sigsafe-0.1.1 (released 23 Feb 2004)
 -------------
 
 * Documentation improvements: a better quick overview, the start of some
@@ -38,7 +75,7 @@ sigsafe-0.1.1
 * Small build system changes - mostly fixing a bunch of typos/thinkos around
   the benchmark.
 
-sigsafe-0.1.0
+sigsafe-0.1.0 (released 15 Feb 2004)
 -------------
 
 * (Initial version)

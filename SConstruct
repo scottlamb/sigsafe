@@ -29,7 +29,6 @@ Export('arch os_name')
 # the name "global_env".
 #
 
-
 global_env = None
 if os_name == 'osf1':
     # gcc doesn't work with pthreads, so force use of the native tools
@@ -45,13 +44,13 @@ global_env.Append(
 )
 
 #
-# Modify it according to our platform
+# Modify the basic environment according to our platform.
 #
 # There's a mix here of behavior hardcoded for each platform and behavior that
 # is tested for. Stuff generally gets tested for if it is very simple or may
 # change across revisions of the operating system. Otherwise, we can get away
-# with tests by platform name because we have to write assembly for each one
-# anyway.
+# with tests by platform name because we need a specific effort to port to
+# each system anyway - to write the assembly code.
 #
 
 if os_name == 'osf1':
@@ -94,7 +93,7 @@ if conf.CheckFunc('epoll_wait'):
 if conf.CheckHeader('stdint.h'):
     conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_STDINT_H'])
 
-# Check for stuff needed only for testing
+# Check for stuff needed only for testing.
 
 extra_test_libs = []
 
@@ -143,7 +142,7 @@ def addTargets(type, base_env):
 # Always build a single-threaded version.
 addTargets('st', global_env)
 
-# Build a multi-threaded version if our platform has a thread good library.
+# Build a multi-threaded version if our platform has a good thread library.
 if os_name != 'freebsd' and os_name != 'netbsd':
     env = global_env.Copy()
     env.Append(
