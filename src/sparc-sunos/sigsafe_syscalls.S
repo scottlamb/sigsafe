@@ -9,7 +9,11 @@
 #include <sys/syscall.h>
 #include <sys/errno.h>
 
+#ifdef _THREAD_SAFE
 .comm sigsafe_key, 4
+#else
+.comm sigsafe_data, 4
+#endif
 
 /*
  * The tricky things to remember below are:
@@ -39,12 +43,7 @@
 .global sigsafe_##name                                              ;\
 .type sigsafe_##name,#function                                      ;\
 sigsafe_##name:                                                     ;\
-        save    %sp,-96,%sp                                         ;\
-        set     sigsafe_key, %g1                                    ;\
-        call    pthread_getspecific                                 ;\
-        ld      [%g1], %o0                                          ;\
-        mov     %o0, %g2                                            ;\
-        restore                                                     ;\
+        LOAD_TSD                                                    ;\
         cmp     %g2, 0                                              ;\
 $sigsafe_##name##_check:                                            ;\
         be      _sigsafe_##name##_maxjmp                            ;\
@@ -70,5 +69,19 @@ $sigsafe_##name##_out:                                              ;\
 .size sigsafe_##name, . - sigsafe_##name
 
 #define LABEL(label) .global label; label:
+
+#ifdef _THREAD_SAFE
+#define LOAD_TSD \
+        save    %sp,-96,%sp                                         ;\
+        set     sigsafe_key, %g1                                    ;\
+        call    pthread_getspecific                                 ;\
+        ld      [%g1], %o0                                          ;\
+        mov     %o0, %g2                                            ;\
+        restore
+#else
+#define LOAD_TSD \
+        set     sigsafe_data, %g1                                   ;\
+        ld      [%g1], %g2
+#endif
 
 #include "syscalls.h"

@@ -160,7 +160,7 @@ label:
         pop     %ecx /* not used */
 #else
 #define LOAD_TSD \
-        movl    sigsafe_data,%eax                                       ;\
+        movl    sigsafe_data,%eax
 #endif
 
 #include "syscalls.h"

@@ -87,7 +87,9 @@ static void sigsafe_init(void) {
      * Should test this and note it in the documentation, so the userhandler
      * does the same thing.
      */
+#ifdef _THREAD_SAFE
     fp = &pthread_getspecific;
+#endif
     fp = &sighandler_for_platform;
     fp = &write;
 }
