@@ -5,6 +5,10 @@ These resources are helpful for writing ppc-darwin assembly:
 - <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/>
   Apple's implementation of these functions.
 
+- <http://cvs.opendarwin.org/index.cgi/src/xnu/osfmk/ppc/hw_exception.s>
+  The kernel's system call entry code - see "shandler".
+  It's a little...dense...but it might be helpful.
+
 - <http://www.securiteam.com/securityreviews/PPC_OSX_Shellcode_Assembly.pdf>
   A paper about ppc/darwin shellcode, but it has some useful small examples.
 

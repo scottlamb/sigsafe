@@ -83,21 +83,23 @@ BUILD_FRAME(0, 1, 0, 0)                                                     @\
  */
 /*@{*/
 #define SAVERESTORE_ARGS_0(func)
-#define SAVERESTORE_ARGS_1(func)                                            @\
-        func    a0, ARG_IN(1)(r1)
-#define SAVERESTORE_ARGS_2(func)                                            @\
+#define SAVERESTORE_ARGS_1(func) \
+        func    a0, ARG_IN(1)(sp)
+#define SAVERESTORE_ARGS_2(func) \
         SAVERESTORE_ARGS_1(func)                                            @\
-        func    a1, ARG_IN(2)(r1)
-#define SAVERESTORE_ARGS_3(func)                                            @\
+        func    a1, ARG_IN(2)(sp)
+#define SAVERESTORE_ARGS_3(func) \
         SAVERESTORE_ARGS_2(func)                                            @\
-        func    a2, ARG_IN(3)(r1)
-#define SAVERESTORE_ARGS_4(func)                                            @\
+        func    a2, ARG_IN(3)(sp)
+#define SAVERESTORE_ARGS_4(func) \
         SAVERESTORE_ARGS_3(func)                                            @\
-        func    a3, ARG_IN(4)(r1)
-#define SAVERESTORE_ARGS_5(func)                                            @\
-        func    a4, ARG_IN(5)(r1)
-#define SAVERESTORE_ARGS_6(func)                                            @\
-        func    a5, ARG_IN(6)(r1)
+        func    a3, ARG_IN(4)(sp)
+#define SAVERESTORE_ARGS_5(func) \
+        SAVERESTORE_ARGS_4(func)                                            @\
+        func    a4, ARG_IN(5)(sp)
+#define SAVERESTORE_ARGS_6(func) \
+        SAVERESTORE_ARGS_5(func)                                            @\
+        func    a5, ARG_IN(6)(sp)
 /*@}*/
 
 #define SYSCALL(name,args)      GENERIC_SYSCALL(name,posix,args)
