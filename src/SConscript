@@ -16,5 +16,10 @@ source = [
 
 env.M4(target = platform_subdir + '/sigsafe_syscalls.S',
        source = platform_subdir + '/sigsafe_syscalls.S.m4')
+
+# This is the _ONLY_ explicit dependency I've ever had to make with scons
+env.Depends(platform_subdir + '/sigsafe_syscalls.S',
+            platform_subdir + '/syscalls.h')
+
 env.StaticLibrary(target = 'sigsafe', source = source)
 #env.SharedLibrary(target = 'sigsafe', source = source)

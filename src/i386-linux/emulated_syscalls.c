@@ -5,8 +5,6 @@
 #include <sigsafe.h>
 #include <linux/net.h>
 
-int sigsafe_socketcall(int call, unsigned long *args);
-
 int sigsafe_accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
     unsigned long args[] = { s, (long) addr, (long) addrlen };
     return sigsafe_socketcall(SYS_ACCEPT, args);

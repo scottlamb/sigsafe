@@ -2,11 +2,12 @@
 # $Id$
 
 import os
+import re
 
 # Determine our platform
 arch = os.uname()[4]
 if arch == 'Power Macintosh': arch = 'ppc'
-if arch == 'i686': arch = 'i386'
+if re.compile('i[3456]86').match(arch): arch = 'i386'
 Export('arch')
 os_name = os.uname()[0].lower().replace('-','')
 Export('os_name')
@@ -30,8 +31,10 @@ env = Environment(
 
 env.Append(LIBS = ['pthread'])
 
-if os_name == 'darwin':
+if os_name == 'darwin' and arch == 'ppc':
     env.Append(CPPDEFINES = ['HAVE_KEVENT'])
+elif os_name == 'linux' and arch == 'i386':
+    env.Append(CPPDEFINES = ['HAVE_POLL','HAVE_EPOLL'])
 
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])

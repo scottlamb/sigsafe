@@ -18,6 +18,19 @@
 
 changequote([, ])
 
+define(POPARGS_0, [])
+define(POPARGS_1, [dnl
+        pop     %ebx
+])
+define(POPARGS_2, [POPARGS_1])
+define(POPARGS_3, [POPARGS_2])
+define(POPARGS_4, [dnl
+        pop     %edi
+POPARGS_3])
+define(POPARGS_5, [dnl
+        pop     %esi
+POPARGS_4])
+
 define(SYSCALL, [
 .text
 .type sigsafe_$1,@function
@@ -26,12 +39,41 @@ sigsafe_$1:
         pushl   sigsafe_key
         call    pthread_getspecific
         pop     %ecx
-        push    %edi
+ifelse($2, 0, [dnl No arguments => no work
+], [dnl More arguments => stack math in EBX
         push    %ebx
-        movl    %esp,%edi
-        movl    0x0c(%edi),%ebx
-        movl    0x10(%edi),%ecx
-        movl    0x14(%edi),%edx
+ifelse(eval($2 > 3), 1, [dnl
+        push    %esi
+], [])dnl
+ifelse(eval($2 > 4), 1, [dnl
+        push    %edi
+], [])dnl
+        movl    %esp,%ebx
+ifelse($2, 1, [dnl
+        movl    0x08(%ebx),%ebx
+], [])dnl
+ifelse($2, 2, [dnl
+        movl    0x0c(%ebx),%ecx
+        movl    0x08(%ebx),%ebx
+], [])dnl
+ifelse($2, 3, [dnl
+        movl    0x10(%ebx),%edx
+        movl    0x0c(%ebx),%ecx
+        movl    0x08(%ebx),%ebx
+], [])dnl
+ifelse($2, 4, [dnl
+        movl    0x14(%ebx),%esi
+        movl    0x10(%ebx),%edx
+        movl    0x0c(%ebx),%ecx
+        movl    0x08(%ebx),%ebx
+], [])dnl
+ifelse($2, 5, [dnl
+        movl    0x18(%ebx),%edi
+        movl    0x14(%ebx),%edi
+        movl    0x10(%ebx),%edx
+        movl    0x0c(%ebx),%ecx
+        movl    0x08(%ebx),%ebx
+], [])])dnl
         testl   %eax,%eax
         je      L_sigsafe_$1_nocompare
 .global _sigsafe_$1_minjmp
@@ -43,14 +85,12 @@ L_sigsafe_$1_nocompare:
 .global _sigsafe_$1_maxjmp
 _sigsafe_$1_maxjmp:
         int     $[]0x80
-        pop     %ebx
-        pop     %edi
+POPARGS_$2
         ret
 .global _sigsafe_$1_jmpto
 _sigsafe_$1_jmpto:
         movl    $-EINTR,%eax
-        pop     %ebx
-        pop     %edi
+POPARGS_$2
         ret
 .size sigsafe_$1, . - sigsafe_$1
 ])

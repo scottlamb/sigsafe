@@ -371,6 +371,9 @@ extern pthread_key_t sigsafe_key;
 extern sigsafe_user_handler_t user_handlers[SIGSAFE_NSIG];
 
 void sighandler_for_platform(ucontext_t *ctx);
+
+/* socketcall is on Linux; it can't hurt elsewhere to declare it here */
+int sigsafe_socketcall(int call, unsigned long *args);
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL
 
 #ifdef __cplusplus
