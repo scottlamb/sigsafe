@@ -16,6 +16,8 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <errno.h>
+#include <sigsafe.h>
+#include "race_checker.h"
 
 enum pipe_half {
     READ = 0,
@@ -43,7 +45,7 @@ enum run_result do_safe_read(void *test_data) {
     int *mypipe = (int*) test_data;
     int retval;
 
-    retval = sigsafe_read(mypipe[READ], &c, sizeof(char));
+    retval = sigsafe_read(mypipe[READ], &c, sizeof(char), 0xdeadbeef);
     if (retval == -EINTR) {
         return INTERRUPTED;
     } else if (retval == 1) {
@@ -58,6 +60,9 @@ enum run_result do_unsafe_read(void *test_data) {
     int *mypipe = (int*) test_data;
     int retval;
 
+    if (signal_received) {
+        return INTERRUPTED;
+    }
     retval = read(mypipe[READ], &c, sizeof(char));
     if (retval == -1 && errno == EINTR) {
         return INTERRUPTED;

@@ -35,6 +35,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <pthread.h>
+#include "race_checker.h"
 
 enum test_result {
     CANCELED,
@@ -63,13 +65,15 @@ int error_wrap(int retval, const char *funcname, enum error_return_type type) {
 
 struct test {
     const char *name;
-    void* (*setup)();
-    void (*instrumented)(void*);
+    void* (*pre_fork_setup)();
+    void (*child_setup)(void*);
+    enum run_result (*instrumented)(void*);
     void (*nudge)(void*);
     void (*teardown)(void*);
 } tests[] = {
-    { "read",   &create_pipe, &do_read, &nudge_read, &cleanup_pipe },
-    { NULL,     NULL,         NULL,      NULL,       NULL }
+    { "safe_read",      &create_pipe,       &install_safe,      &do_safe_read,      &nudge_read,    &cleanup_pipe },
+    { "unsafe_read",    &create_pipe,       &install_unsafe,    &do_unsafe_read,    &nudge_read,    &cleanup_pipe },
+    { NULL,             NULL,               NULL,               NULL,               NULL,           NULL }
 };
 
 void run_test(struct test *t) {
@@ -78,15 +82,23 @@ void run_test(struct test *t) {
     int status;
 
     printf("Running %s test\n", t->name);
-    test_data = t->setup();
-    if (childpid = error_wrap(fork(), "fork", ERRNO) == 0) {
+    test_data = t->pre_fork_setup();
+    if ((childpid = error_wrap(fork(), "fork", ERRNO)) == 0) {
         /* Child */
+        if (t->child_setup != NULL) {
+            t->child_setup(test_data);
+        }
         raise(SIGSTOP); /* a marker for the parent to trace us with */
-        exit(test->instrumented(test_data));
+        exit((int) t->instrumented(test_data));
     }
     error_wrap(waitpid(childpid, &status, WUNTRACED), "waitpid", ERRNO);
     assert(WIFSTOPPED(status));
-    error_wrap(ptrace(PTRACE_ATTACH, childpid, 0, 0), "ptrace", ERRNO);
+    error_wrap(ptrace(PT_ATTACH, childpid, 0, 0), "ptrace", ERRNO);
+    while (1) {
+        printf("instruction\n");
+        errno = 0;
+        error_wrap(ptrace(PT_CONTINUE, childpid, (caddr_t) 1, 0), "ptrace", ERRNO);
+    }
 }
 
 int main(void) {

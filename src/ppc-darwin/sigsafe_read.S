@@ -4,18 +4,16 @@
 #import <architecture/ppc/pseudo_inst.h>
 #import <sys/syscall.h>
 
-#ifndef __DYNAMIC__
-#error not dynamic
-#endif
-
 #define SIG_SETMASK 3 /* from /usr/include/sys/signal.h */
 #define EINTR 4 /* from /usr/include/sys/errno.h */
-#define SIGSAFE_SYSCALLS_READ_IDX 0
 
 ; ssize_t sigsafe_read(int fd, void *buf, size_t count)
 ;                      r3      r4         r5
 ;                      (1w)    (1w)       (1w)
 
+.reference _sigsafe_key
+
+        .text
 NESTED(_sigsafe_read, 8, 3, 0, 0)
         stw     r6,LOCAL_VAR(1)(r1)         ; make LOCAL_VAR(1) easy to find
                                             ; in debugger

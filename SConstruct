@@ -33,10 +33,6 @@ if env['CC'] == 'gcc':
     else:
         env.Append(CPPDEFINES=['NDEBUG'],CCFLAGS=['-O2'],LINKFLAGS=['-O2'])
 
-if os_name == 'darwin':
-    env['AS'] = 'gcc'
-    env['ASFLAGS'] = ['-c']
-
 Export('env')
 BuildDir(buildDir, 'src', 0)
 SConscript(buildDir + '/SConscript')
