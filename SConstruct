@@ -17,12 +17,13 @@ type = 'debug'
 buildDir = 'build-%s-%s-%s' % (arch, os_name, type)
 
 env = Environment(
+    M4FLAGS = '',
     CPPPATH = [
         '#/src',
         '#/src/' + arch + '-' + os_name
     ],
     CPPDEFINES = [
-        '_XOPEN_SOURCE=600',
+        #'_XOPEN_SOURCE=600',
         '_REENTRANT',
         '_THREAD_SAFE',
     ],
@@ -31,7 +32,11 @@ env = Environment(
     ]
 )
 
-env.Append(LIBS = ['pthread'])
+if os_name == 'freebsd':
+    env.Append(CCFLAGS = ['-pthread'])
+    env.Append(LINKFLAGS = ['-pthread'])
+else:
+    env.Append(LIBS = ['pthread'])
 
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])

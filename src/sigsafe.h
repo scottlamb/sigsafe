@@ -10,6 +10,7 @@
 #ifndef ORG_SLAMB_SIGSAFE_H
 #define ORG_SLAMB_SIGSAFE_H
 
+#include <pthread.h>
 #include <signal.h>
 #include <ucontext.h>
 #include <sys/select.h>

@@ -1,5 +1,19 @@
 $Id$
 
+sigsafe-0.1.2
+-------------
+
+* Added preliminary support for FreeBSD. (See RELEASE_NOTES.)
+
+* A bit more documentation work. (More needed!)
+
+* Added a test for sigsafe_select in the race checker, and found/fixed a bug
+  that meant 4- and 5-argument system calls would not work properly under
+  Linux/x86. (D'oh!)
+
+* Added some additional tests for things that don't appear to be actual
+  problems. Good.
+
 sigsafe-0.1.1
 -------------
 

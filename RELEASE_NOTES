@@ -1,6 +1,17 @@
 $Id$
 
-sigsafe version 0.1.1 release notes:
+sigsafe version 0.1.2 release notes:
+
+* The FreeBSD/x86 support is preliminary:
+
+  - It doesn't like FreeBSD 4.8's -pthread argument to link with a user
+    threading package, and I don't ever intend to try supporting it.
+    (Symptoms: simple_test will return EAGAIN if no input is available when it
+    does the read.) I'd like to hear about successes or failures with
+    LinuxThreads on FreeBSD 4.* or KSEs on FreeBSD 5.*.
+
+  - The race condition checker doesn't work here, either. No si_code
+    constants; probably not too hard to fix, but I haven't yet.
 
 * The documentation is improved, but it still has a ways to go:
 
@@ -9,16 +20,13 @@ sigsafe version 0.1.1 release notes:
   - The "Pattern reference" could use more explanation and should be adapted
     to use the same terminology.
   - The "Goal reference" doesn't really exist yet.
-  - Some other sections don't even have skeletons yet.
 
   If you spot anything wrong with what's already there, please let me know. If
   it's unclear to you, odds are it is to someone else, too. And if it seems
   wrong to you, let me know so I can correct or justify it.
 
-* There are no additional platforms; still only Linux/x86 and Darwin/ppc
-  are supported. I originally this release to support more, but from the
-  feedback I've gotten, the documentation improvements are more important now.
-  The next couple releases will probably also be focused on documentation.
+  Patches to add new documentation are also welcome. But saying "it's just not
+  there" doesn't help - I already know that.
 
 * The race checker is in pretty good shape now on Linux/x86.
   Try it out with "tests/race_checker/race_checker -qm" for a quick test.

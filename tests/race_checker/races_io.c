@@ -7,6 +7,7 @@
  * @author          Scott Lamb &lt;slamb@slamb.org&gt;
  */
 
+#include <sys/types.h>
 #include <sys/select.h>
 #include <assert.h>
 #include <string.h>
@@ -15,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ptrace.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <pthread.h>
 #include <errno.h>
