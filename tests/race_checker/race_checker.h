@@ -14,13 +14,15 @@
 #include <signal.h>         /* for sig_atomic_t */
 #include <setjmp.h>         /* for sigsetjmp */
 
+/** Type of error return; used by error_wrap */
 enum error_return_type {
-    DIRECT,         /**< pthread functions */
-    NEGATIVE,       /**< sigsafe functions */
-    ERRNO           /**< old-school functions */
+    DIRECT,   /**< pthread functions; return 0 or Exxx */
+    NEGATIVE, /**< sigsafe functions; return >= 0 or -Exxx */
+    ERRNO     /**< old-school functions; return >= 0 or -1, Exxx in errno */
 };
 
-int error_wrap(int, const char*, enum error_return_type);
+/** Aborts if retval/type/errno indicate error. */
+int error_wrap(int retval, const char *fname, enum error_return_type type);
 
 enum run_result {
     /* skip 0 */

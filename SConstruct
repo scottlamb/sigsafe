@@ -22,7 +22,7 @@ opts.AddOptions(
 
 arch = os.uname()[4]
 if arch == 'Power Macintosh': arch = 'ppc'
-if re.compile('i[3456]86').match(arch): arch = 'i386'
+if re.compile('i[3456]?86(pc)?').match(arch): arch = 'i386'
 if re.compile('sun.*').match(arch): arch = 'sparc'
 os_name = string.replace(string.lower(os.uname()[0]),'-','')
 Export('arch os_name')
