@@ -101,11 +101,11 @@ label:
 #define LOAD_TSD(args) \
         SAVE_REGS_##args                                                    ;\
         movl    sigsafe_key(%rip), %edi                                     ;\
-        call    pthread_getspecific                                         ;\
+        call    pthread_getspecific@PLT                                     ;\
         RESTORE_REGS_##args
 #else
 #define LOAD_TSD(args) \
-        movq    sigsafe_data,%rax
+        movq    sigsafe_data(%rip),%rax
 #endif
 
 #include "syscalls.h"
