@@ -9,7 +9,6 @@
 
 struct sigsafe_tsd {
     volatile sig_atomic_t signal_received;
-    sigset_t active_mask;
     intptr_t user_data;
     void (*destructor)(intptr_t);
 };
@@ -38,7 +37,6 @@ int sigsafe_install_handler(int signum,
     assert(0 <= signum && signum < _NSIGS);
     user_handlers[signum] = handler;
     sa.sa_sigaction = &sighandler;
-    sigfillset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     return sigaction(signum, &sa, NULL);
 }
@@ -63,7 +61,6 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     }
 
     tsd->signal_received = 0;
-    sigemptyset(&tsd->active_mask); /** @todo Fill in active_mask */
     tsd->user_data = user_data;
     tsd->destructor = destructor;
 
@@ -73,13 +70,4 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     }
 
     return 0;
-}
-
-int sigsafe_setmask(int how, const sigset_t *set, sigset_t *oset) {
-    struct sigsafe_tsd *tsd = NULL;
-
-    tsd = (struct sigsafe_tsd*) pthread_getspecific(sigsafe_key);
-    assert(tsd != NULL);
-
-    /** @todo */
 }

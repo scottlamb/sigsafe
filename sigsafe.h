@@ -181,18 +181,6 @@ int sigsafe_install_handler(int signum,
 int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
 
 /**
- * Change a thread's signal mask.
- * Use this function in place of <tt>pthread_sigmask(2)</tt>, as it preserves
- * a cache of the thread's signal mask. This cached mask it used when jumping
- * from the signal handler to eliminate the need for every sigsafe wrapper to
- * make a system call to retrieve the current mask. Therefore, it is important
- * that it be accurate.
- * @pre The TSD has been installed on this thread
- * @ingroup sigsafe_control
- */
-int sigsafe_setmask(int how, const sigset_t *set, sigset_t *oset);
-
-/**
  * @defgroup sigsafe_syscalls System call wrappers
  * @ingroup sigsafe
  * These are alternate system call wrappers which are guaranteed to return

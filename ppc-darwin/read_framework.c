@@ -1,6 +1,7 @@
 ssize_t sigsafe_read(int fd, void *buf, size_t count) {
     struct sigsafe_tsd *tsd;
     int old_cancellation_type;
+    sigset_t uc_sigmask;
 
     /*
      * This is not async cancel-safe; it needs to be done first.
@@ -36,8 +37,11 @@ failure:
     return -1;
 
 signal_jump:
-    pthread_setcanceltype(&old_cancellation_type, NULL);
-    pthread_sigmask(SIG_SETMASK, &tsd->sigmask, NULL);
+    /*
+     * The jump will have restored the cancellation type for us and filled in
+     * uc_sigmask.
+     */
+    pthread_sigmask(SIG_SETMASK, &uc_sigmask, NULL);
     errno = EINTR;
     return -1;
 }
