@@ -23,7 +23,7 @@
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
-#ifdef DO_SAVE
+#ifdef DO_SAFE
 #define MYREAD sigsafe_read
 #else
 #define MYREAD read
