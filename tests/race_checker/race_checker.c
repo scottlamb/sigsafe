@@ -19,6 +19,10 @@
  * - the system call completes normally and then the return is lost due to
  *   the signal handling.
  *
+ * This code is (unfortunately) a case study of where sigsafe would be
+ * helpful. My signal handling is fugly and probably wrong. But I'd prefer not
+ * to use the code being tested.
+ *
  * @legal
  * Copyright &copy; 2004 Scott Lamb &lt;slamb@slamb.org&gt;.
  * This file is part of sigsafe, which is released under the MIT license.
@@ -115,13 +119,33 @@ void ensure_chld_arrived(void) {
 }
 
 /**
+ * Takes care of getting rid of a child that has timed out and making sure
+ * the signal has arrived.
+ */
+void smite_child(pid_t childpid) {
+    kill(childpid, SIGKILL);
+    /*
+     * One would assume that after waitpid(), the SIGCHLD has arrived.
+     */
+    error_wrap(waitpid(childpid, NULL, 0), "waitpid", ERRNO);
+    assert(statuscode == CLD_KILLED);
+}
+
+/**
  * Runs the test for a given function.
  * @bug There is some <i>ugly</i> code in here.
  */
 enum test_result run_test(const struct test *t) {
     void *test_data;
     pid_t childpid;
-    int num_steps_before_continue = -1, num_steps_so_far;
+    /*
+     * XXX
+     * For some reason, exit() takes a _LOT_ of instructions - a lot of atexit
+     * handlers? I just assume for now that nothing exciting will happen after
+     * 500 instructions so I don't have to wait forever.
+     */
+    int num_steps_before_continue = 500/*-1*/,
+        num_steps_so_far;
     int nudge_step = -1;
     int status;
     struct timespec timeout;
@@ -175,12 +199,7 @@ enum test_result run_test(const struct test *t) {
                 } else {
                     printf("ERROR: timeout on step %d\n",
                            num_steps_so_far);
-                    kill(childpid, SIGKILL);
-                    ensure_chld_arrived();
-                    /*
-                     * XXX could actually be two SIGCHLD events. Ugh.
-                     */
-                    assert(statuscode == CLD_KILLED);
+                    smite_child(childpid);
                     t->teardown(test_data);
                     return FAILURE;
                 }
@@ -220,11 +239,8 @@ enum test_result run_test(const struct test *t) {
                 error_wrap(retval, "nanosleep", ERRNO);
 
                 /* Timeout */
-                kill(childpid, SIGKILL);
+                smite_child(childpid);
                 printf("ERROR: timed out after continue\n");
-                /* XXX Again, could be two events */
-                ensure_chld_arrived();
-                /* XXX should probably waitpid */
                 t->teardown(test_data);
                 return FAILURE;
             }
