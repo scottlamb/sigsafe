@@ -111,6 +111,9 @@ if conf.CheckFunc('kevent'):
 if conf.CheckFunc('epoll_wait'):
     conf.env.Append(CPPDEFINES = ['HAVE_EPOLL'])
 
+if conf.CheckHeader('stdint.h'):
+    conf.env.Append(CPPDEFINES = ['SIGSAFE_HAVE_STDINT_H'])
+
 env = conf.Finish()
 Export('env')
 BuildDir(buildDir, 'src', 0)

@@ -24,6 +24,6 @@ void trace_step(pid_t pid, int signum) {
 }
 
 void trace_continue(pid_t pid, int signum) {
-    error_wrap(ptrace(PTRACE_CONTINUE, pid, NULL, (void*) (long) signum),
-               "ptrace(PTRACE_CONTINUE, ...)", ERRNO);
+    error_wrap(ptrace(PTRACE_CONT, pid, NULL, (void*) (long) signum),
+               "ptrace(PTRACE_CONT, ...)", ERRNO);
 }

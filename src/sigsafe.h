@@ -19,6 +19,9 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#ifdef SIGSAFE_HAVE_STDINT_H
+#include <stdint.h> /* for intptr_t */
+#endif
 
 #ifdef HAVE_EPOLL
 /*
