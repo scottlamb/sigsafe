@@ -106,6 +106,21 @@ And then, send me a patch! The number of supported platforms will grow much
 faster this way.
 
 
+HOW DO I ADD A SYSTEM CALL?
+===========================
+
+In most cases, it's quite easy to add a new system call to an existing
+platform. You just need to:
+
+- add the prototype to sigsafe.h.
+- add it to the syscalls.h list for your platform.
+
+Some system calls are emulated - actually library functions implemented in
+terms of other, raw system calls. These are a bit more work. If it's not
+obvious how you could implement in terms of a raw system call, ask around or
+check your system's libc source code.
+
+
 WHAT MAY I DO WITH THIS SOFTWARE?
 =================================
 

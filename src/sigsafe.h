@@ -10,9 +10,9 @@
 
 /**
  * @mainpage sigsafe library for safe signal handling.
- * sigsafe is a library for  efficient, safe, reliable method of delivering
- * signals to specific threads. This is not easy without sigsafe ---
- * there are several common incorrect patterns, which I will describe more
+ * sigsafe is a library for  efficient, safe, reliable method of promptly
+ * delivering signals to specific threads. This is not easy without sigsafe
+ * --- there are several common incorrect patterns, which I will describe more
  * below.
  *
  * sigsafe includes the code, documentation, a performance test, and a
@@ -99,6 +99,27 @@
  * defined by SUSv3 and notably is false on Cygwin. Linux and Solaris do
  * support this behavior, though neither correctly restores the cancellation
  * state.
+ * <li>Using <tt>pselect(2)</tt>. This function is supposed to change the
+ * signal mask atomically in the kernel for the duration of operation,
+ * supporting error-free operation like this:
+ * @code
+ * sigset_t blocked, unblocked;
+ * int retval;
+ *
+ * pthread_sigmask(SIG_SETMASK, &blocked, NULL);
+ *
+ * ...
+ *
+ * while ((retval = pselect(..., &unblocked)) == -1 && errno == EINTR) {
+ *     printf("Signal received.\n");
+ * }
+ *
+ * ...
+ * @endcode
+ * However, some implementations (notably Linux!) are wrong --- they simply
+ * surround a <tt>select(2)</tt> call with <tt>pthread_sigmask(2)</tt>
+ * calls. Thus, <tt>pselect(2)</tt> may not return <tt>EINTR</tt> when you
+ * expect it to.</li>
  * <li>Replacing blocking IO calls with <tt>poll(2)</tt> calls and
  * non-blocking IO calls:
  * @code
@@ -125,6 +146,28 @@
  * operation. In practice, no libc has an acceptable implementation. See my
  * cancellation tests for details, but it will be a long time before this is
  * an acceptable option.</li>
+ * <li>Masking any of several types of signals with <tt>sigprocmask(2)</tt> or
+ * <tt>pthread_sigmask(2)</tt>. Since signals sent with <tt>kill(2)</tt> and
+ * <tt>pthread_kill(2)</tt> are held for delivery when masked, you would
+ * expect other signals to behave in the same way. But some ways of triggering
+ * signals, like changes in child processes and alarm events, do not produce
+ * the expected results when masked. So code like this:
+ * @code
+ * pthread_sigmask(SIG_SETMASK, &sigchld_set, NULL);
+ * ...
+ * ptrace(PTRACE_STEP, traced_pid, NULL, NULL);
+ * while (1) {
+ *     retval = sigtimedwait(&sigchld_set, &timeout);
+ *     if (retval == -1 && errno == EAGAIN) {
+ *         // timeout
+ *     } else if (retval == SIGCHLD) {
+ *         // child event
+ *     }
+ * }
+ * @endcode
+ * contains a race. If the child event happens before entering
+ * <tt>sigtimedwait(2)</tt>, no signal will ever be delivered.</li>
+ * <li>...and many other schemes.</li>
  * </ol>
  * <h2>The solution</h2>
  * With <tt>sigsafe</tt>, you can write code like this:
@@ -250,10 +293,6 @@ typedef void (*sigsafe_user_handler_t)(int, siginfo_t*, ucontext_t*, intptr_t);
  * @return 0 on success; <tt>-EINVAL</tt> where <tt>sigaction(2)</tt> would
  *         return -1 and set errno to <tt>EINVAL</tt>.
  * @note
- * If you install any signal handlers through other methods, you should ensure
- * that they mask the "safe" signals, as jumping from nested signal handlers
- * is not safe.
- * @note
  * Call this function at most once for each signal number.
  * @ingroup sigsafe_control
  */
@@ -284,6 +323,13 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * returning <tt>-EINTR</tt> and the heart of this function; it will clear
  * them all. If this is a concern for your application, use the userdata to
  * track signals and check it <i>after</i> calling this function.
+ * @note Signals can also be received while you are reading the userdata. This
+ * can cause the usual problems like word tearing and stale data. If this is a
+ * concern, one approach would be to block signals with
+ * <tt>pthread_sigmask(2)</tt> while handling previous ones. (Though remember
+ * that some signal delivery mechanisms --- like child process events and
+ * interval timers --- simply do not deliver signals if all eligible threads
+ * have them masked.)
  * @ingroup sigsafe_control
  */
 intptr_t sigsafe_clear_received(void);
@@ -321,6 +367,9 @@ intptr_t sigsafe_clear_received(void);
  * points of the code are known to the signal handler, which allows it to make
  * a long jump to the appropriate branch. Thus, they have virtually no
  * overhead over the standard system call wrappers.
+ * @note
+ * If you do not see the system call you want here, don't panic. It's very
+ * easy to add new system calls in most cases.
  */
 
 /**
