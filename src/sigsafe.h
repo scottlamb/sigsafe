@@ -70,6 +70,22 @@
  * signals safely without them, but often with a performance penalty or with
  * great difficulty.
  *
+ * <h3>Performance</h3>
+ *
+ * sigsafe's goal is to allow every system call to have correct behavior when
+ * signals arrive, without compromising speed when signals do not arrive. As
+ * most system calls should not be interrupted by a signal, this is a
+ * necessary and sufficient condition for saying a signal handling method has
+ * good performance.
+ *
+ * Another common correct way of handling signals is to set up a pipe for
+ * signal handling and write to it in the signal handler. If you're already
+ * polling for multiple IO sources, this works well. However, if you're using
+ * blocking IO, you have to change to non-blocking and precede all
+ * <tt>read()</tt> and <tt>write()</tt> with a <tt>select()</tt>. Thus, the
+ * system call overhead is doubled in the most common case. For this reason,
+ * <tt>sigsafe</tt> is often superior to this method.
+ *
  * <h3>Implementation</h3>
  *
  * sigsafe is implemented through a set of system call wrappers implemented in
