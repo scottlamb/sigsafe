@@ -2,3 +2,8 @@
 # $Id$
 
 SConscript('race_checker/SConscript')
+
+Import('env')
+env = env.Copy()
+env.Prepend(LIBS = ['sigsafe'])
+env.Program(target = 'simple_test', source = 'simple_test.c')

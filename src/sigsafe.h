@@ -288,7 +288,6 @@ struct sigsafe_tsd {
     volatile sig_atomic_t signal_received;
     intptr_t user_data;
     void (*destructor)(intptr_t);
-    jmp_buf env;
 };
 
 struct sigsafe_syscall {
@@ -296,6 +295,7 @@ struct sigsafe_syscall {
     void *address;
     void *minjmp;
     void *maxjmp;
+    void *jmpto;
 };
 
 extern struct sigsafe_syscall sigsafe_syscalls[];
@@ -304,11 +304,6 @@ extern pthread_key_t sigsafe_key;
 extern sigsafe_user_handler_t user_handlers[NSIG];
 
 void sighandler_for_platform(ucontext_t *ctx);
-void sigsafe_read_init(void);
-void sigsafe_write_init(void);
-void sigsafe_epoll_wait_init(void);
-void sigsafe_kevent_init(void);
-void sigsafe_select_init(void);
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL
 
 #ifdef __cplusplus

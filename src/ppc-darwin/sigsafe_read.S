@@ -14,38 +14,27 @@
 .reference _sigsafe_key
 
         .text
-NESTED(_sigsafe_read, 8, 3, 0, 0)
-        stw     r6,LOCAL_VAR(1)(r1)         ; make LOCAL_VAR(1) easy to find
-                                            ; in debugger
+NESTED(_sigsafe_read, 0, 1, 0, 0)
         stw     r3,ARG_IN(1)(r1)
         stw     r4,ARG_IN(2)(r1)
         stw     r5,ARG_IN(3)(r1)
-        EXTERN_TO_REG(r3,_sigsafe_key)      ; retrieve TSD
+        EXTERN_TO_REG(r3,_sigsafe_key)       ; retrieve TSD
         CALL_EXTERN(_pthread_getspecific)
-        cmpwi   r3,0                        ; if NULL, don't dereference
-        beq     go
-        stw     r3,LOCAL_VAR(2)(r1)
-        addi    r3,r3,12
-        CALL_EXTERN(__setjmp)
-        cmpwi   r3,0
-        bne     jumped
-        lwz     r7,LOCAL_VAR(2)(r1)
+        mr      r10,r3
         lwz     r3,ARG_IN(1)(r1)
         lwz     r4,ARG_IN(2)(r1)
         lwz     r5,ARG_IN(3)(r1)
+        li      r0,SYS_read
+        cmpwi   r10,0                        ; if TSD is NULL, don't dereference
+        beq     _sigsafe_read_maxjmp
 LABEL(_sigsafe_read_minjmp)
-        lwz     r8,0(r7)                    ; if signal received, go to eintr
-        cmpwi   r8,0
-        bne     eintr
-go:     li      r0,SYS_read
+        lwz     r10,0(r10)                   ; if signal received, go to eintr
+        cmpwi   r10,0
+        bne     _sigsafe_read_jmpto
 LABEL(_sigsafe_read_maxjmp)
         sc
-        neg     r3,r3                       ; Executed only on error
+        neg     r3,r3                        ; Executed only on error
         RETURN
-jumped: li      r3,SIG_SETMASK
-        ; LOCAL_VAR(1) is now the sigset_t, courtesy of the signal handler
-        lwz     r4,LOCAL_VAR(1)(r1)
-        sub     r5,r5,r5
-        CALL_EXTERN(_pthread_sigmask)
-eintr:  li      r3,-EINTR
+LABEL(_sigsafe_read_jmpto)
+        li      r3,-EINTR
         RETURN
