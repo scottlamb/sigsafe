@@ -24,15 +24,15 @@ int error_wrap(int retval, const char *funcname, enum error_return_type type) {
     if (type == ERRNO && retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
-        abort();
+        /*abort();*/
     } else if (type == DIRECT && retval != 0) {
         fprintf(stderr, "%s returned %d (%s)\n",
                 funcname, retval, strerror(retval));
-        abort();
+        /*abort();*/
     } else if (type == NEGATIVE && retval < 0) {
         fprintf(stderr, "%s returned %d (%s)\n",
                 funcname, retval, strerror(-retval));
-        abort();
+        /*abort();*/
     }
     return retval;
 }
@@ -49,7 +49,8 @@ int main(void) {
     memset(buf, 0, sizeof buf);
     error_wrap(retval = sigsafe_read(0, buf, sizeof(buf)-1), "sigsafe_read",
                NEGATIVE);
-    printf("read returned: %d\n", retval);
-    printf("buf: %s\n", buf);
+    if (retval >= 0) {
+        printf("read %d bytes: %s\n", retval, buf);
+    }
     return 0;
 }

@@ -10,6 +10,7 @@
 #define ORG_SLAMB_SIGSAFE_INTERNAL
 #include <sigsafe.h>
 #include <ucontext.h>
+#include <unistd.h>
 
 void sighandler_for_platform(ucontext_t *ctx) {
     struct sigsafe_syscall *s;
@@ -17,6 +18,9 @@ void sighandler_for_platform(ucontext_t *ctx) {
     eip = (void*) ctx->uc_mcontext.mc_eip;
     for (s = sigsafe_syscalls; s->address != NULL; s++) {
         if (s->minjmp <= eip && eip <= s->maxjmp) {
+#ifdef ORG_SLAMB_SIGSAFE_DEBUG_JUMP
+            write(2, "[J]", 3);
+#endif
             ctx->uc_mcontext.mc_eip = (int) s->jmpto;
             return;
         }

@@ -54,6 +54,12 @@ if env['CC'] == 'gcc':
     else:
         env.Append(CPPDEFINES=['NDEBUG'],CCFLAGS=['-O2'],LINKFLAGS=['-O2'])
 
+if type == 'debug':
+    env.Append(CPPDEFINES=[
+        'ORG_SLAMB_SIGSAFE_DEBUG_JUMP',   # write [C] to stderr whenever
+                                          # jumping from sighandler
+    ])
+
 conf = env.Configure()
 
 # Manually excluding Darwin from poll() because they have a poll() that
