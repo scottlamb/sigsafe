@@ -10,8 +10,10 @@ platform_subdir = arch + '-' + os_name
 source = [
     'sigsafe.c',
     platform_subdir + '/sighandler_platform.c',
-    platform_subdir + '/sigsafe_read.S'
+    platform_subdir + '/sigsafe_syscalls.S'
 ]
 
+env.M4(target = platform_subdir + '/sigsafe_syscalls.S',
+       source = platform_subdir + '/sigsafe_syscalls.S.m4')
 env.StaticLibrary(target = 'sigsafe', source = source)
 #env.SharedLibrary(target = 'sigsafe', source = source)

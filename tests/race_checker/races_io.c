@@ -45,7 +45,7 @@ enum run_result do_safe_read(void *test_data) {
     int *mypipe = (int*) test_data;
     int retval;
 
-    retval = sigsafe_read(mypipe[READ], &c, sizeof(char), 0xdeadbeef);
+    retval = sigsafe_read(mypipe[READ], &c, sizeof(char));
     if (retval == -EINTR) {
         return INTERRUPTED;
     } else if (retval == 1) {

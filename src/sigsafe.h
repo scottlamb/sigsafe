@@ -240,7 +240,7 @@ int sigsafe_install_tsd(intptr_t userdata, void (*destructor)(intptr_t));
  * Signal-safe <tt>read(2)</tt>.
  * @ingroup sigsafe_syscalls
  */
-int sigsafe_read(int fd, void *buf, size_t count, void*deadbeef);
+int sigsafe_read(int fd, void *buf, size_t count);
 
 /**
  * Signal-safe <tt>write(2)</tt>.
