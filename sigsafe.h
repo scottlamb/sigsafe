@@ -281,9 +281,6 @@ extern pthread_key_t sigsafe_key;
 extern void (*user_handlers)(int, siginfo_t*, ucontext_t*, intptr_t)[_NSIGS];
 
 void sighandler_for_platform(ucontext_t *ctx);
-#endif
-
-
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL
 
 #ifdef __cplusplus
