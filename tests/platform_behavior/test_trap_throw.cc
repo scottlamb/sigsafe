@@ -3,7 +3,7 @@
  * Tests if trapping signal handlers can throw C++ exceptions.
  * This is very system-dependent and probably also dependent on the compiler
  * options. On gcc, try <tt>-fnon-call-exceptions</tt> and maybe
- * <tt>-fasynchronous-unwind-tables</tt>.
+ * <tt>-fasynchronous-exceptions</tt>.
  * <p>This actually isn't working for me at all - it's calling the unexpected
  * handler. <tt>-fno-enforce-eh-specs</tt> doesn't help.</p>
  * @legal

@@ -1,0 +1,9 @@
+$Id$
+
+The files in this directory are .h files with doxygen comments only ---
+major sections of the documentation. They're in separate files for clarity and
+to avoid unnecessary recompiles when they're changed.
+
+I'm using doxygen exclusively for this project because I like having all of
+the documentation right under one umbrella with extensive cross-references.
+doxygen even makes the function calls in the examples into hyperlinks.
