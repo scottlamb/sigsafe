@@ -35,16 +35,16 @@ forloop([i], [1], [$2], [define([reg],[r[]eval(i+2)])
 
         li      r0,SYS_$1
         cmpwi   r10,0                        ; if TSD is NULL, don't dereference
-        beq     _sigsafe_$1_maxjmp
-LABEL(_sigsafe_$1_minjmp)
+        beq     __sigsafe_$1_maxjmp
+LABEL(__sigsafe_$1_minjmp)
         lwz     r10,0(r10)                   ; if signal received, go to eintr
         cmpwi   r10,0
-        bne     _sigsafe_$1_jmpto
-LABEL(_sigsafe_$1_maxjmp)
+        bne     __sigsafe_$1_jmpto
+LABEL(__sigsafe_$1_maxjmp)
         sc
         neg     r3,r3                        ; Executed only on error
         RETURN
-LABEL(_sigsafe_$1_jmpto)
+LABEL(__sigsafe_$1_jmpto)
         li      r3,-EINTR
         RETURN
 

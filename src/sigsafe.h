@@ -29,6 +29,9 @@
 #include <ucontext.h>
 #include <sys/select.h>
 #include <sys/types.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #ifdef HAVE_EPOLL
 #include <sys/epoll.h>
@@ -285,9 +288,11 @@ int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
  * @par Availability:
  * Modern FreeBSD, NetBSD, OpenBSD, Darwin 7+ (OS X 10.3 Panther)
  */
+#if defined(HAVE_KEVENT) || defined(DOXYGEN)
 int sigsafe_kevent(int kq, int nchanges, struct kevent **changelist,
                    int nevents, struct kevent **eventlist,
                    struct timespec *timeout);
+#endif
 
 /**
  * Signal-safe <tt>select(2)</tt>.
@@ -330,6 +335,15 @@ int sigsafe_connect(int sockfd, const struct sockaddr *serv_addr,
 int sigsafe_nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef ORG_SLAMB_SIGSAFE_INTERNAL
+
+#if defined(NSIG)
+#define SIGSAFE_NSIG NSIG
+#elif defined(_NSIG)
+#define SIGSAFE_NSIG _NSIG
+#else
+#error Not sure how many signals you have
+#endif
+
 struct sigsafe_tsd {
     volatile sig_atomic_t signal_received;
     intptr_t user_data;
@@ -347,7 +361,7 @@ struct sigsafe_syscall {
 extern struct sigsafe_syscall sigsafe_syscalls[];
 
 extern pthread_key_t sigsafe_key;
-extern sigsafe_user_handler_t user_handlers[NSIG];
+extern sigsafe_user_handler_t user_handlers[SIGSAFE_NSIG];
 
 void sighandler_for_platform(ucontext_t *ctx);
 #endif // ORG_SLAMB_SIGSAFE_INTERNAL

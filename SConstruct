@@ -6,6 +6,7 @@ import os
 # Determine our platform
 arch = os.uname()[4]
 if arch == 'Power Macintosh': arch = 'ppc'
+if arch == 'i686': arch = 'i386'
 Export('arch')
 os_name = os.uname()[0].lower().replace('-','')
 Export('os_name')
@@ -25,6 +26,8 @@ env = Environment(
         '#/' + buildDir
     ]
 )
+
+env.Append(LIBS = ['pthread'])
 
 if env['CC'] == 'gcc':
     env.Append(CCFLAGS = ['-Wall'])
