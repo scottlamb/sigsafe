@@ -27,7 +27,7 @@ void sighandler_for_platform(ucontext_t *ctx) {
             tsd = (struct sigsafe_tsd*) ctx->uc_mcontext->ss.r7;
 
             memcpy(uc_sigmask, &ctx->uc_sigmask, sizeof(sigset_t));
-            longjmp(tsd->env, 1);
+            _longjmp(tsd->env, 1);
         }
     }
 }

@@ -42,13 +42,12 @@ LABEL(_sigsafe_read_minjmp)
 go:     li      r0,SYS_read
 LABEL(_sigsafe_read_maxjmp)
         sc
-        b       error                       ; Error path
+        neg     r3,r3                       ; Executed only on error
         RETURN
 jumped: li      r3,SIG_SETMASK
         ; LOCAL_VAR(1) is now the sigset_t, courtesy of the signal handler
         lwz     r4,LOCAL_VAR(1)(r1)
         sub     r5,r5,r5
         CALL_EXTERN(_pthread_sigmask)
-eintr:  li      r3,EINTR
-error:  neg     r3,r3
+eintr:  li      r3,-EINTR
         RETURN
