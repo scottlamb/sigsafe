@@ -16,15 +16,28 @@
 #include <stdlib.h>
 #include <errno.h>
 
+/*
+ * See Ulrich Drepper's "How to Write Shared Libraries"
+ * <http://www.ukuug.org/events/linux2002/papers/pdf/dsohowto.pdf>
+ * for a description of __attribute__ ((visibility ("hidden")))
+ * and other good things to know about ELF relocation, symbol versioning, etc.
+ */
+
+#ifdef __GNUC__
+#define PRIVATE __attribute__ ((visibility ("hidden")))
+#else
+#define PRIVATE
+#endif
+
 #ifdef _THREAD_SAFE
-pthread_key_t sigsafe_key;
+pthread_key_t sigsafe_key PRIVATE;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 #else
-struct sigsafe_tsd *sigsafe_data;
+struct sigsafe_tsd *sigsafe_data PRIVATE;
 static int sigsafe_inited;
 #endif
 
-sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
+static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
         extern void *_sigsafe_##name##_minjmp; \
