@@ -40,19 +40,19 @@ ssize_t sigsafe_recvmsg(int s, struct msghdr *msg, int flags) {
     return sigsafe_socketcall(SYS_RECVMSG, args);
 }
 
-ssize_t sigsafe_send(int s, void *buf, size_t len, int flags) {
+ssize_t sigsafe_send(int s, const void *buf, size_t len, int flags) {
     unsigned long args[] = { s, (long) buf, len, flags };
     return sigsafe_socketcall(SYS_SEND, args);
 }
 
-ssize_t sigsafe_sendto(int s, void *buf, size_t len, int flags,
-                       struct sockaddr *to, socklen_t *tolen) {
+ssize_t sigsafe_sendto(int s, const void *buf, size_t len, int flags,
+                       const struct sockaddr *to, socklen_t tolen) {
     unsigned long args[] = { s, (long) buf, len, flags, (long) to,
                              (long) tolen };
     return sigsafe_socketcall(SYS_SENDTO, args);
 }
 
-ssize_t sigsafe_sendmsg(int s, struct msghdr *msg, int flags) {
+ssize_t sigsafe_sendmsg(int s, const struct msghdr *msg, int flags) {
     unsigned long args[] = { s, (long) msg, flags };
     return sigsafe_socketcall(SYS_SENDMSG, args);
 }
