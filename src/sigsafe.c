@@ -83,7 +83,7 @@ static void tsd_destructor(void* tsd_v) {
 
 static void sigsafe_init(void) {
     /* "volatile" so our seemingly-useless references aren't optimized away. */
-    volatile void *fp;
+    void * volatile fp;
 
 #ifdef _THREAD_SAFE
     pthread_key_create(&sigsafe_key_, &tsd_destructor);
@@ -104,10 +104,7 @@ static void sigsafe_init(void) {
     fp = &write;
 }
 
-int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
-    struct sigaction sa;
-
-    assert(0 < signum && signum <= SIGSAFE_SIGMAX);
+static void sigsafe_ensure_init(void) {
 #ifdef _THREAD_SAFE
     pthread_once(&sigsafe_once, &sigsafe_init);
 #else
@@ -116,6 +113,13 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
         sigsafe_init();
     }
 #endif
+}
+
+int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
+    struct sigaction sa;
+
+    assert(0 < signum && signum <= SIGSAFE_SIGMAX);
+    sigsafe_ensure_init();
     user_handlers[signum - 1] = handler;
 #ifdef SIGSAFE_NO_SIGINFO
     sa.sa_handler = (void (*)(int)) &sighandler;
@@ -141,6 +145,7 @@ int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
     struct sigsafe_tsd_ *sigsafe_data_ = NULL;
     int retval;
 
+    sigsafe_ensure_init();
     assert(pthread_getspecific(sigsafe_key_) == NULL);
 #else
     assert(sigsafe_data_ == NULL);

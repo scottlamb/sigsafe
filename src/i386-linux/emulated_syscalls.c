@@ -22,3 +22,37 @@ int sigsafe_connect(int s, const struct sockaddr *name, socklen_t namelen) {
     unsigned long args[] = { s, (long) name, namelen };
     return sigsafe_socketcall(SYS_CONNECT, args);
 }
+
+ssize_t sigsafe_recv(int s, void *buf, size_t len, int flags) {
+    unsigned long args[] = { s, (long) buf, len, flags };
+    return sigsafe_socketcall(SYS_RECV, args);
+}
+
+ssize_t sigsafe_recvfrom(int s, void *buf, size_t len, int flags,
+                     struct sockaddr *from, socklen_t *fromlen) {
+    unsigned long args[] = { s, (long) buf, len, flags, (long) from,
+                             (long) fromlen };
+    return sigsafe_socketcall(SYS_RECVFROM, args);
+}
+
+ssize_t sigsafe_recvmsg(int s, struct msghdr *msg, int flags) {
+    unsigned long args[] = { s, (long) msg, flags };
+    return sigsafe_socketcall(SYS_RECVMSG, args);
+}
+
+ssize_t sigsafe_send(int s, void *buf, size_t len, int flags) {
+    unsigned long args[] = { s, (long) buf, len, flags };
+    return sigsafe_socketcall(SYS_SEND, args);
+}
+
+ssize_t sigsafe_sendto(int s, void *buf, size_t len, int flags,
+                       struct sockaddr *to, socklen_t *tolen) {
+    unsigned long args[] = { s, (long) buf, len, flags, (long) to,
+                             (long) tolen };
+    return sigsafe_socketcall(SYS_SENDTO, args);
+}
+
+ssize_t sigsafe_sendmsg(int s, struct msghdr *msg, int flags) {
+    unsigned long args[] = { s, (long) msg, flags };
+    return sigsafe_socketcall(SYS_SENDMSG, args);
+}

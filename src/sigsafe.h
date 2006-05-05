@@ -204,17 +204,40 @@ intptr_t sigsafe_clear_received(void);
  */
 /*@{*/
 
+/** Signal-safe <tt>open(2)</tt>. */
+int sigsafe_open(const char *path, int flags, mode_t mode);
+
 /** Signal-safe <tt>read(2)</tt>. */
-int sigsafe_read(int fd, void *buf, size_t count);
+ssize_t sigsafe_read(int fd, void *buf, size_t count);
 
 /** Signal-safe <tt>readv(2)</tt>. */
-int sigsafe_readv(int d, const struct iovec *iov, int iovcnt);
+ssize_t sigsafe_readv(int d, const struct iovec *iov, int iovcnt);
 
 /** Signal-safe <tt>write(2)</tt>. */
-int sigsafe_write(int fd, const void *buf, size_t count);
+ssize_t sigsafe_write(int fd, const void *buf, size_t count);
 
 /** Signal-safe <tt>writev(2)</tt>. */
-int sigsafe_writev(int d, const struct iovec *iov, int iovcnt);
+ssize_t sigsafe_writev(int d, const struct iovec *iov, int iovcnt);
+
+/** Signal-safe <tt>send(2)</tt>. */
+ssize_t sigsafe_send(int s, const void *msg, size_t len, int flags);
+
+/** Signal-safe <tt>sendto(2)</tt>. */
+ssize_t sigsafe_sendto(int s, const void *msg, size_t len, int flags,
+                       const struct sockaddr *to, socklen_t tolen);
+
+/** Signal-safe <tt>sendmsg(2)</tt>. */
+ssize_t sigsafe_sendmsg(int s, const struct msghdr *msg, int flags);
+
+/** Signal-safe <tt>recv(2)</tt>. */
+ssize_t sigsafe_recv(int s, void *buf, size_t len, int flags);
+
+/** Signal-safe <tt>recvfrom(2)</tt>. */
+ssize_t sigsafe_recvfrom(int s, void *buf, size_t len, int flags,
+                         struct sockaddr *from, socklen_t *fromlen);
+
+/** Signal-safe <tt>recvmsg(2)</tt>. */
+ssize_t sigsafe_recvmsg(int s, struct msghdr *msg, int flags);
 
 /**
  * Signal-safe <tt>epoll_wait(2)</tt>.
@@ -239,6 +262,7 @@ int sigsafe_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
  * Modern FreeBSD, NetBSD, OpenBSD, Darwin 7+ (OS X 10.3 Panther)
  */
 #if defined(SIGSAFE_HAVE_KEVENT) || defined(DOXYGEN)
+struct kevent;
 int sigsafe_kevent(int kq, int nchanges, struct kevent **changelist,
                    int nevents, struct kevent **eventlist,
                    struct timespec *timeout);

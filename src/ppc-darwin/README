@@ -5,7 +5,7 @@ These resources are helpful for writing ppc-darwin assembly:
 - <http://home-1.tiscali.nl/~solognt/codingstuff/ppc_cursus.html>
   A good introduction to PPC assembly
 
-- <http://cvs.opendarwin.org/index.cgi/src/Libc/ppc/sys/>
+- <http://darwinsource.opendarwin.org/10.4.6.ppc/Libc-391.2.5/ppc/sys/>
   Apple's implementation of these functions.
 
 - <http://cvs.opendarwin.org/index.cgi/src/xnu/osfmk/ppc/hw_exception.s>

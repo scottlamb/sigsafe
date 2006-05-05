@@ -38,11 +38,6 @@ int kill(pid_t pid, int signo);
 
 /**
  * Reads from a file descriptor.
- * A synchronous, thread-directed <tt>SIGPIPE</tt> is delivered during this
- * system call if the opposite end of the pipe is closed. I recommend ignoring
- * this signal, which is redundant. It was implemented solely to be a more
- * abrupt error to programs that do not check return values carefully. The 0
- * return says the same thing.
  */
 ssize_t read(int fd, void *buf, size_t nbytes);
 

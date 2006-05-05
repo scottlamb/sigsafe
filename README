@@ -16,8 +16,7 @@ sigsafe includes code, documentation, a performance benchmark, and a
 correctness tester that exhaustively searches for race conditions with the
 ptrace(2) facility.
 
-sigsafe is available for Linux/i386 and Darwin/ppc (OS X). More platforms
-should be ready soon.
+sigsafe is available for several platforms.
 
 sigsafe is released under the MIT license.
 
@@ -29,14 +28,23 @@ Unfortunately, sigsafe requires writing assembly for each platform - platform
 being a combination of operating system and architecture. So far, it has been
 ported to:
 
-- Linux/x86
 - Darwin/ppc
+- FreeBSD/alpha
+- FreeBSD/x86
+- Linux/alpha
+- Linux/ia64
+- Linux/x86
+- Linux/x86_64
+- NetBSD/x86
+- SunOS/sparc
+- SunOS/x86
+- Tru64/alpha
 
-The other machines I have avaible to me are Linux/alpha, Tru64/alpha,
-HP-UX/PA-RISC, Solaris/sparc, FreeBSD/x86, FreeBSD/alpha, and Linux/ia64.
-I intend to eventually port it to most or all of them. Or, if you're
-impatient, you can tackle a port yourself. It's not as bad as it sounds. See
-the porting section below.
+I also have a HP-UX/PA-RISC machine available to me that I've never gotten
+around to trying.
+
+If there's another platform you're looking for, see the porting section
+of the manual or give me access to one.
 
 
 WHAT'S INCLUDED?
@@ -73,8 +81,18 @@ Assuming you've installed scons, type:
 
 at the top level. It will produce everything in a build-XXX-YYY-ZZZ directory.
 Run the microbenchmark to see that performance is acceptable and the
-correctness tester to see that sigsafe works (and the other ways don't). Copy
-the library and include file to a suitable location, like /usr/local/bin.
+correctness tester to see that sigsafe works (and the other ways don't).
+When you're satisfied, type:
+
+    $ sudo scons install
+
+If you are having trouble, you can compile with debugging support:
+
+    $ scons debug=yes
+
+See also the help:
+
+    $ scons --help
 
 
 HOW DO I ADD A SYSTEM CALL?
