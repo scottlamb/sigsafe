@@ -16,11 +16,11 @@ SYSCALL(nanosleep, 3)
 SYSCALL(poll, 3)
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
-SYSCALL(recv, 4)
+/* recv is emulated */
 SYSCALL(recvfrom, 6)
 SYSCALL(recvmsg, 3)
 SYSCALL(select, 5)
-SYSCALL(send, 4)
+/* send is emulated */
 SYSCALL(sendto, 6)
 SYSCALL(sendmsg, 3)
 SYSCALL(write, 3)

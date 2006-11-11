@@ -9,4 +9,14 @@
 
 #include "sigsafe_internal.h"
 
-/* None so far */
+ssize_t
+sigsafe_recv(int s, void *buf, size_t len, int flags)
+{
+    return sigsafe_recvfrom(s, buf, len, flags, NULL, NULL);
+}
+
+ssize_t
+sigsafe_send(int s, const void *buf, size_t len, int flags)
+{
+    return sendto(s, buf, len, flags, NULL, 0);
+}
