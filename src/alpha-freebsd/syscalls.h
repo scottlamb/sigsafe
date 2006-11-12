@@ -17,11 +17,11 @@ SYSCALL(open, 3)
 SYSCALL(poll, 3)
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
-SYSCALL(recv, 4)
+/* recv is emulated */
 SYSCALL(recvfrom, 6)
 SYSCALL(recvmsg, 3)
 SYSCALL(select, 5)
-SYSCALL(send, 4)
+/* send is emulated */
 SYSCALL(sendmsg, 3)
 SYSCALL(sendto, 6)
 SYSCALL(write, 3)

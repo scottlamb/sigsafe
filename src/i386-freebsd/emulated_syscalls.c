@@ -12,6 +12,18 @@
 #include <sys/wait.h>
 #include <sys/resource.h>
 
+ssize_t
+sigsafe_recv(int s, void *buf, size_t len, int flags)
+{
+    return sigsafe_recvfrom(s, buf, len, flags, NULL, NULL);
+}
+
+ssize_t
+sigsafe_send(int s, const void *buf, size_t len, int flags)
+{
+    return sendto(s, buf, len, flags, NULL, 0);
+}
+
 pid_t sigsafe_wait(int *status) {
     return sigsafe_wait4(WAIT_ANY, status, 0, NULL);
 }
