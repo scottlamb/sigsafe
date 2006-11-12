@@ -42,7 +42,7 @@ label:
 #define SAVE_REGS_0
 #define SAVE_REGS_1 \
         SAVE_REGS_0                                                         ;\
-        push %rbx
+        push %rdi
 #define SAVE_REGS_2 \
         SAVE_REGS_1                                                         ;\
         push %rsi
@@ -61,7 +61,7 @@ label:
 
 #define RESTORE_REGS_0
 #define RESTORE_REGS_1                                                      ;\
-        pop %rbx
+        pop %rdi
 #define RESTORE_REGS_2                                                      ;\
         pop %rsi                                                            ;\
         RESTORE_REGS_1
@@ -83,7 +83,7 @@ label:
  * syscall-style arguments.
  */
 /*@{*/
-#define SETUP_ARGS_0                                                         \
+#define SETUP_ARGS_0
 #define SETUP_ARGS_1
 #define SETUP_ARGS_2
 #define SETUP_ARGS_3
