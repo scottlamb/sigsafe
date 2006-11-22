@@ -10,7 +10,7 @@
 SYSCALL(accept, 3)
 SYSCALL(connect, 3)
 #define SYS_clock_sleep_trap -62 /* from xnu/osfmk/mach/syscall_sw.h */
-/*XXX: MACH_SYSCALL(clock_sleep_trap, 5) */
+MACH_SYSCALL(clock_sleep_trap, 5)
 #ifdef SIGSAFE_HAVE_KEVENT
 SYSCALL(kevent, 6)
 #endif

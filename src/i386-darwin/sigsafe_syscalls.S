@@ -5,7 +5,11 @@
  */
 
 #ifdef __DYNAMIC__
-#error "This code is position-dependent."
+/*
+ * XXX: Just a warning because I don't know why __DYNAMIC__ is defined.
+ * I'm only building a static library.
+ */
+#warn "This code is position-dependent."
 #endif
 
 #include <sys/syscall.h>
@@ -13,10 +17,11 @@
 #include <architecture/i386/asm_help.h>
 
 #define EINTR 4 /* from sys/errno.h> */
+#define KERN_ABORTED 14 /* from /usr/include/mach/kern_return.h */
 
 /* system call number in %eax */
 
-#define SYSCALL(name,args)                                               \
+#define GENERIC_SYSCALL(name,type,args)                                  \
 .text                                                                   ;\
 /*XXX: .type sigsafe_##name,@function*/                                 ;\
 LABEL(_sigsafe_##name)                                                  ;\
@@ -28,6 +33,19 @@ HIDDEN(_sigsafe_##name##_minjmp_)                                       ;\
         jne     _sigsafe_##name##_jmpto_                                ;\
 L_sigsafe_##name##_nocompare:                                           ;\
         movl    $SYS_##name,%eax                                        ;\
+        SYSCALL_BOTTOM_##type(name)                                     ;\
+L_sigsafe_##name##_out:                                                 ;\
+        ret                                                             ;\
+/*XXX: .size sigsafe_##name, . - sigsafe_##name */
+
+#define SYSCALL_BOTTOM_mach(name)                                        \
+HIDDEN(_sigsafe_##name##_maxjmp_)                                       ;\
+        int     $0x81                                                   ;\
+        ret                                                             ;\
+HIDDEN(_sigsafe_##name##_jmpto_)                                        ;\
+        movl    $KERN_ABORTED,%eax
+
+#define SYSCALL_BOTTOM_posix(name)                                       \
         /* need to put return address in %edx, stack in %ecx */         ;\
         call L_sigsafe_##name##_call                                    ;\
 L_sigsafe_##name##_call:                                                ;\
@@ -41,10 +59,7 @@ L_sigsafe_##name##_back:                                                ;\
         neg     %eax /* error path */                                   ;\
         ret                                                             ;\
 HIDDEN(_sigsafe_##name##_jmpto_)                                        ;\
-        movl    $-EINTR,%eax                                            ;\
-L_sigsafe_##name##_out:                                                 ;\
-        ret                                                             ;\
-/*XXX: .size sigsafe_##name, . - sigsafe_##name */
+        movl    $-EINTR,%eax
 
 #define HIDDEN(label) \
 .private_extern label                                                   ;\
@@ -66,5 +81,8 @@ L_pthread_getspecific$stub:
 #define LOAD_TSD \
         mov     _sigsafe_data_,%eax
 #endif
+
+#define SYSCALL(name,args)      GENERIC_SYSCALL(name,posix,args)
+#define MACH_SYSCALL(name,args) GENERIC_SYSCALL(name,mach,args)
 
 #include "syscalls.h"

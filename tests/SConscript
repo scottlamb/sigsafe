@@ -14,6 +14,7 @@ env.Prepend(LIBS = ['sigsafe', 'm'])
 env.Append(LIBS = extra_test_libs)
 
 for i in ['simple_test',
+          'nanosleep_test',
           'test_pipe_bytecount',
           'test_sock_bytecount']:
     env.Program(target = i, source = i + '.c')
