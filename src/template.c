@@ -14,6 +14,8 @@
 #include <pthread.h>
 #include "sigsafe_internal.h"
 
+#undef PRIVATE_DEF
+#define PRIVATE_DEF(x) x
 #ifdef _THREAD_SAFE
 PRIVATE_DEF(pthread_key_t sigsafe_key_);
 #else
@@ -28,4 +30,12 @@ ssize_t sigsafe_read_template(int fd, char *buf, size_t len) {
         return read(fd, buf, len);
     }
     return -EINTR;
+}
+
+int
+main(int argc, char **argv)
+{
+    char buf[256];
+
+    return sigsafe_read_template(0, buf, sizeof(buf));
 }

@@ -46,11 +46,18 @@ int main(void) {
                NEGATIVE);
     error_wrap(sigsafe_install_tsd(0, NULL), "sigsafe_install_tsd", NEGATIVE);
     /*raise(SIGUSR1);*/
-    memset(buf, 0, sizeof buf);
     error_wrap(retval = sigsafe_read(0, buf, sizeof(buf)-1), "sigsafe_read",
                NEGATIVE);
     if (retval >= 0) {
-        printf("read %d bytes: %s\n", retval, buf);
+        buf[retval] = 0;
+        printf("read %d bytes: <%s>\n", retval, buf);
+    }
+    sigsafe_clear_received();
+    close(0);
+    retval = sigsafe_read(0, buf, sizeof(buf)-1);
+    if (retval != -EBADF) {
+        printf("Incorrect error behavior. Wanted -EBADF, got %d\n",
+               retval);
     }
     return 0;
 }

@@ -4,6 +4,8 @@ $Id$
 sigsafe-0.1.4 (not yet released)
 -------------
 
+* New platform: Darwin/x86. (Still in progress.)
+
 * Fixed a major bug in which multithreaded Linux/x86_64 builds would
   pass an incorrect first argument to the kernel.
 
