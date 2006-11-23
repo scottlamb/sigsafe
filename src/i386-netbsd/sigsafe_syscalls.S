@@ -8,6 +8,7 @@
 #include <sigsafe_config.h>
 
 #define EINTR 4 /* from sys/errno.h> */
+#define SYS_sigsuspend SYS___sigsuspend14
 
 #define SYSCALL(name,args)                                               \
 .text                                                                   ;\

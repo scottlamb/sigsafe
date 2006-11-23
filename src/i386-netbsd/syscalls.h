@@ -11,7 +11,7 @@ SYSCALL(accept, 3)
 SYSCALL(connect, 3)
 SYSCALL(nanosleep, 2)
 SYSCALL(open, 3)
-SYSCALL(pause, 0)
+/* pause is emulated */
 SYSCALL(poll, 3)
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
