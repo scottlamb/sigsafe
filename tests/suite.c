@@ -192,6 +192,7 @@ test_tsd_subthread(void *arg)
         return (void*) 1;
     }
 
+    write(1, "[returning]", sizeof("[returning]")-1);
     return (void*) 0;
 }
 

@@ -74,10 +74,12 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 #ifdef _THREAD_SAFE
 static void tsd_destructor(void* tsd_v) {
     struct sigsafe_tsd_ *sigsafe_data_ = (struct sigsafe_tsd_*) tsd_v;
+    write(1, "[start tsd_destructor]", sizeof("[start tsd_destructor]")-1);
     if (sigsafe_data_->destructor != NULL) {
         sigsafe_data_->destructor(sigsafe_data_->user_data);
     }
     free(sigsafe_data_);
+    write(1, "[end tsd_destructor]", sizeof("[end tsd_destructor]")-1);
 }
 #endif
 
