@@ -31,3 +31,12 @@ pid_t sigsafe_wait(int *status) {
 pid_t sigsafe_wait3(int *status, int options, struct rusage *rusage) {
     return sigsafe_wait4(WAIT_ANY, status, options, rusage);
 }
+
+int
+sigsafe_pause(void)
+{
+    sigset_t set;
+
+    sigemptyset(&set);
+    return sigsafe_sigsuspend(&set);
+}
