@@ -125,11 +125,11 @@ HIDDEN(sigsafe_##name##_jmpto_)                                         ;\
  * called.
  */
 /*@{*/
-#define SETUP_ARGS_0                                                         \
+#define SETUP_ARGS_0
 #define SETUP_ARGS_1 _SETUP_ARGS_1(0)
 #define _SETUP_ARGS_1(off)                                                   \
         movl    0x08+off(%ebx),%ebx                                         ;\
-        /*      0x04+off(%ebx) contains our return address */               ;\
+        /*      0x04+off(%ebx) contains our return address */                \
         /*      0x00+off(%ebx) contains our saved %ebx */
 #define SETUP_ARGS_2 _SETUP_ARGS_2(0)
 #define _SETUP_ARGS_2(off)                                                   \
