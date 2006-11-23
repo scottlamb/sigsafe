@@ -201,11 +201,14 @@ test_tsd(void)
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1 };
 
     tsd = 0;
+    write(1, "[pre-create]", sizeof("[pre-create]")-1);
     error_wrap(pthread_create(&subthread, NULL, test_tsd_subthread,
                               &subthread_tsd),
                "pthread_create", DIRECT);
+    write(1, "[pre-join]", sizeof("[pre-join]")-1);
     error_wrap(pthread_join(subthread, (void**) &res),
                "pthread_join", DIRECT);
+    write(1, "[post-join]", sizeof("[post-join]")-1);
     if (res != 0) {
         printf("(subthread failed) ");
         return 1;
@@ -216,6 +219,7 @@ test_tsd(void)
     }
 
     /* Subthread's flag shouldn't be honored here. */
+    write(1, "[pre-nanosleep]", sizeof("[pre-nanosleep]")-1);
     res = sigsafe_nanosleep(&ts, NULL);
     if (res != 0) {
         printf("(sigsafe_nanosleep failed) ");
