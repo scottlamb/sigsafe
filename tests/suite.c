@@ -163,7 +163,8 @@ subthread_tsd_destructor(intptr_t tsd)
 {
     sig_atomic_t volatile *subthread_tsd = (int*) tsd;
 
-    write(1, "[destructor]", sizeof("[destructor]")-1);
+    printf("[destruct %p]", subthread_tsd);
+    fflush(stdout);
     *subthread_tsd = 42;
 }
 
@@ -172,7 +173,8 @@ test_tsd_subthread(void *arg)
 {
     sig_atomic_t volatile *subthread_tsd = (int*) arg;
 
-    write(1, "[pre-tsd]", sizeof("[pre-tsd]")-1);
+    printf("[pre-install %p]", subthread_tsd);
+    fflush(stdout);
     error_wrap(sigsafe_install_tsd((intptr_t) subthread_tsd,
                                    subthread_tsd_destructor),
                "sigsafe_install_tsd", NEGATIVE);
