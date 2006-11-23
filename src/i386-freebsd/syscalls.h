@@ -14,6 +14,7 @@ SYSCALL(kevent, 6)
 #endif
 SYSCALL(nanosleep, 3)
 SYSCALL(open, 3)
+SYSCALL(pause, 0)
 SYSCALL(poll, 3)
 /* recv is emulated */
 SYSCALL(recvfrom, 6)
@@ -24,6 +25,7 @@ SYSCALL(select, 5)
 /* send is emulated */
 SYSCALL(sendto, 6)
 SYSCALL(sendmsg, 3)
+SYSCALL(sigsuspend, 1)
 SYSCALL(write, 3)
 SYSCALL(writev, 3)
 SYSCALL(wait4, 4)

@@ -15,6 +15,7 @@ MACH_SYSCALL(clock_sleep_trap, 5)
 SYSCALL(kevent, 6)
 #endif
 SYSCALL(open, 3)
+/* pause is emulated */
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
 /* recv is emulated */

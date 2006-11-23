@@ -14,6 +14,7 @@ SYSCALL(epoll_wait, 4)
 #endif
 SYSCALL(nanosleep, 3)
 SYSCALL(open, 3)
+SYSCALL(pause, 0)
 SYSCALL(poll, 3)
 SYSCALL(read, 3)
 SYSCALL(readv, 3)
@@ -24,6 +25,7 @@ SYSCALL(select, 5)
 /* send goes through socketcall */
 /* sendmsg goes through socketcall */
 /* sendto goes through socketcall */
+SYSCALL(sigsuspend, 1)
 SYSCALL(socketcall, 2)
 SYSCALL(write, 3)
 SYSCALL(writev, 3)
