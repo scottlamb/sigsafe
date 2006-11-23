@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int tsd;
+sig_atomic_t volatile tsd;
 
 enum error_return_type {
     DIRECT,         /**< pthread functions */
@@ -115,11 +115,41 @@ test_pause(void)
     return 0;
 }
 
+void
+test_userhandler_handler(int signo, siginfo_t *si, ucontext_t *ctx,
+                         intptr_t user_data)
+{
+    sig_atomic_t volatile *tsd = (sig_atomic_t volatile *) user_data;
+
+    if (*tsd != 26) {
+        abort();
+    }
+    *tsd = 37;
+}
+
+/**
+ * Tests that the userhandler is invoked with the correct info.
+ */
+int
+test_userhandler(void)
+{
+    sigsafe_install_handler(SIGUSR1, test_userhandler_handler);
+    tsd = 26;
+    raise(SIGUSR1);
+    sigsafe_clear_received();
+    if (tsd != 37) {
+        return 1;
+    }
+
+    return 0;
+}
+
+
 #ifdef _THREAD_SAFE
 static void
 test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 {
-    int *subthread_tsd = (int*) user_data;
+    sig_atomic_t volatile *subthread_tsd = (int*) user_data;
 
     if (*subthread_tsd != 26) {
         abort();
@@ -130,7 +160,7 @@ test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 static void
 subthread_tsd_destructor(intptr_t tsd)
 {
-    int *subthread_tsd = (int*) tsd;
+    sig_atomic_t volatile *subthread_tsd = (int*) tsd;
 
     *subthread_tsd = 42;
 }
@@ -138,7 +168,7 @@ subthread_tsd_destructor(intptr_t tsd)
 static void*
 test_tsd_subthread(void *arg)
 {
-    int *subthread_tsd = (int*) arg;
+    sig_atomic_t volatile *subthread_tsd = (int*) arg;
 
     error_wrap(sigsafe_install_tsd((intptr_t) subthread_tsd,
                                    subthread_tsd_destructor),
@@ -147,7 +177,8 @@ test_tsd_subthread(void *arg)
     *subthread_tsd = 26;
     error_wrap(sigsafe_install_handler(SIGUSR1, test_tsd_usr1),
                "sigsafe_install_handler", NEGATIVE);
-    raise(SIGUSR1);
+    /*raise(SIGUSR1);*/
+    pthread_kill(pthread_self(), SIGUSR1);
     /*
      * Note: never clearing received.
      * This should not affect the main thread.
@@ -167,18 +198,24 @@ test_tsd(void)
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1 };
 
     tsd = 0;
-    pthread_create(&subthread, NULL, test_tsd_subthread, &subthread_tsd);
-    pthread_join(subthread, (void**) &res);
+    error_wrap(pthread_create(&subthread, NULL, test_tsd_subthread,
+                              &subthread_tsd),
+               "pthread_create", DIRECT);
+    error_wrap(pthread_join(subthread, (void**) &res),
+               "pthread_join", DIRECT);
     if (res != 0) {
+        printf("(subthread failed) ");
         return 1;
     }
     if (subthread_tsd != 42 /* set by destructor */) {
+        printf("(destructor didn't run) ");
         return 1;
     }
 
     /* Subthread's flag shouldn't be honored here. */
     res = sigsafe_nanosleep(&ts, NULL);
     if (res != 0) {
+        printf("(sigsafe_nanosleep failed) ");
         return 1;
     }
 
@@ -235,6 +272,7 @@ struct test {
     DECLARE(test_received_flag),
     DECLARE(test_pause), /* 0-argument */
     DECLARE(test_read),  /* 3-argument */
+    DECLARE(test_userhandler),
 #ifdef _THREAD_SAFE
     DECLARE(test_tsd),
 #endif
