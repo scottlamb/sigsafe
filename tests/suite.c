@@ -186,13 +186,55 @@ test_tsd(void)
 }
 #endif
 
+/* Tests that sigsafe_read() works. */
+int
+test_read(void)
+{
+    int mypipe[2];
+    int res;
+    REGISTERS_DECLARATION;
+    char buf[4];
+
+    error_wrap(pipe(mypipe), "pipe", ERRNO);
+    res = write(mypipe[1], "asdf", 4); /* <PIPE_BUF; complete without block */
+    if (res != 4) {
+        printf("(setup failure) ");
+        res = 1;
+        goto out;
+    }
+
+    REGISTERS_PRE;
+    res = sigsafe_read(mypipe[0], buf, 4);
+    if (REGISTERS_WRONG) {
+        printf("(bad registers) ");
+        res = 1;
+        goto out;
+    }
+    if (res != 4) {
+        printf("(returned %d) ", res);
+        res = 1;
+        goto out;
+    }
+    if (memcmp(buf, "asdf", 4) != 0) {
+        res = 1;
+        goto out;
+    }
+    res = 0;
+
+  out:
+    close(mypipe[0]);
+    close(mypipe[1]);
+    return res;
+}
+
 struct test {
     char *name;
     int (*func)(void);
 } tests[] = {
 #define DECLARE(name) { #name, name }
     DECLARE(test_received_flag),
-    DECLARE(test_pause),
+    DECLARE(test_pause), /* 0-argument */
+    DECLARE(test_read),  /* 3-argument */
 #ifdef _THREAD_SAFE
     DECLARE(test_tsd),
 #endif
