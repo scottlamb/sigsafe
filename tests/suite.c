@@ -151,6 +151,7 @@ test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 {
     sig_atomic_t volatile *subthread_tsd = (int*) user_data;
 
+    write(1, "[userhandler]", sizeof("[userhandler]")-1);
     if (*subthread_tsd != 26) {
         abort();
     }
@@ -162,6 +163,7 @@ subthread_tsd_destructor(intptr_t tsd)
 {
     sig_atomic_t volatile *subthread_tsd = (int*) tsd;
 
+    write(1, "[destructor]", sizeof("[destructor]")-1);
     *subthread_tsd = 42;
 }
 
@@ -170,6 +172,7 @@ test_tsd_subthread(void *arg)
 {
     sig_atomic_t volatile *subthread_tsd = (int*) arg;
 
+    write(1, "[pre-tsd]", sizeof("[pre-tsd]")-1);
     error_wrap(sigsafe_install_tsd((intptr_t) subthread_tsd,
                                    subthread_tsd_destructor),
                "sigsafe_install_tsd", NEGATIVE);
@@ -177,7 +180,7 @@ test_tsd_subthread(void *arg)
     *subthread_tsd = 26;
     error_wrap(sigsafe_install_handler(SIGUSR1, test_tsd_usr1),
                "sigsafe_install_handler", NEGATIVE);
-    /*raise(SIGUSR1);*/
+    write(1, "[pre-kill]", sizeof("[pre-kill]")-1);
     pthread_kill(pthread_self(), SIGUSR1);
     /*
      * Note: never clearing received.
