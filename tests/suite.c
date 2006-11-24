@@ -289,11 +289,20 @@ struct test {
 #undef DECLARE
 };
 
+void
+sighup(int signo)
+{
+    abort();
+}
+
 int
 main(int argc, char **argv)
 {
     int result = 0;
     struct test *t;
+
+    /* the i386-linux tests are dying on signal 1?!? */
+    signal(1 /*SIGHUP*/, sighup);
 
     error_wrap(sigsafe_install_handler(SIGALRM, NULL),
                "sigsafe_install_handler", NEGATIVE);
