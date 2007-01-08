@@ -24,6 +24,7 @@ SYSCALL(select, 5)
 /* send is emulated */
 SYSCALL(sendto, 6)
 SYSCALL(sendmsg, 3)
+#define __NR_sigsuspend __NR_rt_sigsuspend
 SYSCALL(sigsuspend, 1)
 SYSCALL(write, 3)
 SYSCALL(writev, 3)
