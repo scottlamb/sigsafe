@@ -42,8 +42,8 @@ int main(void) {
     char buf[42];
     int retval;
 
-    error_wrap(sigsafe_install_handler(SIGUSR1, NULL), "sigsafe_install_handler",
-               NEGATIVE);
+    error_wrap(sigsafe_install_handler(SIGUSR1, NULL),
+               "sigsafe_install_handler", NEGATIVE);
     error_wrap(sigsafe_install_tsd(0, NULL), "sigsafe_install_tsd", NEGATIVE);
     /*raise(SIGUSR1);*/
     error_wrap(retval = sigsafe_read(0, buf, sizeof(buf)-1), "sigsafe_read",

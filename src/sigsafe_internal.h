@@ -54,9 +54,9 @@ struct sigsafe_tsd_ {
 };
 
 struct sigsafe_syscall_ {
-    const void *minjmp;
-    const void *maxjmp;
-    const void *jmpto;
+    void* const minjmp;
+    void* const maxjmp;
+    void* const jmpto;
 };
 
 PRIVATE_DEF(struct sigsafe_syscall_ sigsafe_syscalls_[]);

@@ -149,7 +149,7 @@ test_userhandler(void)
 static void
 test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 {
-    sig_atomic_t volatile *subthread_tsd = (int*) user_data;
+    sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) user_data;
 
     write(1, "[userhandler]", sizeof("[userhandler]")-1);
     if (*subthread_tsd != 26) {
@@ -161,17 +161,17 @@ test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 static void
 subthread_tsd_destructor(intptr_t tsd)
 {
-    sig_atomic_t volatile *subthread_tsd = (int*) tsd;
+    sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) tsd;
 
-    printf("[destruct %p]", subthread_tsd);
-    fflush(stdout);
     *subthread_tsd = 42;
+    printf("[destructed %p]", subthread_tsd);
+    fflush(stdout);
 }
 
 static void*
 test_tsd_subthread(void *arg)
 {
-    sig_atomic_t volatile *subthread_tsd = (int*) arg;
+    sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) arg;
 
     printf("[pre-install %p]", subthread_tsd);
     fflush(stdout);
@@ -179,6 +179,9 @@ test_tsd_subthread(void *arg)
                                    subthread_tsd_destructor),
                "sigsafe_install_tsd", NEGATIVE);
 
+    if (*subthread_tsd != 73) {
+        return (void*) 1;
+    }
     *subthread_tsd = 26;
     error_wrap(sigsafe_install_handler(SIGUSR1, test_tsd_usr1),
                "sigsafe_install_handler", NEGATIVE);
@@ -200,13 +203,14 @@ int
 test_tsd(void)
 {
     pthread_t subthread;
-    int subthread_tsd, res;
+    sig_atomic_t volatile subthread_tsd=73;
+    int res;
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1 };
 
     tsd = 0;
     write(1, "[pre-create]", sizeof("[pre-create]")-1);
     error_wrap(pthread_create(&subthread, NULL, test_tsd_subthread,
-                              &subthread_tsd),
+                              (void*) &subthread_tsd),
                "pthread_create", DIRECT);
     write(1, "[pre-join]", sizeof("[pre-join]")-1);
     error_wrap(pthread_join(subthread, (void**) &res),
@@ -217,7 +221,8 @@ test_tsd(void)
         return 1;
     }
     if (subthread_tsd != 42 /* set by destructor */) {
-        printf("(destructor didn't run) ");
+        printf("(destructor didn't run; subthread_tsd=*%p=%d tsd=*%p=%d) ",
+               &subthread_tsd, subthread_tsd, &tsd, tsd);
         return 1;
     }
 
