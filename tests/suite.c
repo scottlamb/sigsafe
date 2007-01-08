@@ -146,16 +146,22 @@ test_userhandler(void)
 
 
 #ifdef _THREAD_SAFE
+#define MAGIC_INIT          73
+#define MAGIC_BEFORESIG     26
+#define MAGIC_SIG           37
+#define MAGIC_AFTERSIG      17
+#define MAGIC_DESTRUCTOR    42
+
 static void
 test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 {
     sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) user_data;
 
     write(1, "[userhandler]", sizeof("[userhandler]")-1);
-    if (*subthread_tsd != 26) {
+    if (*subthread_tsd != MAGIC_BEFORESIG) {
         abort();
     }
-    *subthread_tsd = 37;
+    *subthread_tsd = MAGIC_SIG;
 }
 
 static void
@@ -163,7 +169,10 @@ subthread_tsd_destructor(intptr_t tsd)
 {
     sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) tsd;
 
-    *subthread_tsd = 42;
+    if (*subthread_tsd != MAGIC_AFTERSIG) {
+        abort();
+    }
+    *subthread_tsd = MAGIC_DESTRUCTOR;
     printf("[destructed %p]", subthread_tsd);
     fflush(stdout);
 }
@@ -179,10 +188,10 @@ test_tsd_subthread(void *arg)
                                    subthread_tsd_destructor),
                "sigsafe_install_tsd", NEGATIVE);
 
-    if (*subthread_tsd != 73) {
+    if (*subthread_tsd != MAGIC_INIT) {
         return (void*) 1;
     }
-    *subthread_tsd = 26;
+    *subthread_tsd = MAGIC_BEFORESIG;
     error_wrap(sigsafe_install_handler(SIGUSR1, test_tsd_usr1),
                "sigsafe_install_handler", NEGATIVE);
     write(1, "[pre-kill]", sizeof("[pre-kill]")-1);
@@ -191,9 +200,10 @@ test_tsd_subthread(void *arg)
      * Note: never clearing received.
      * This should not affect the main thread.
      */
-    if (*subthread_tsd != 37) {
+    if (*subthread_tsd != MAGIC_SIG) {
         return (void*) 1;
     }
+    *subthread_tsd = MAGIC_AFTERSIG;
 
     write(1, "[returning]", sizeof("[returning]")-1);
     return (void*) 0;
@@ -203,24 +213,26 @@ int
 test_tsd(void)
 {
     pthread_t subthread;
-    sig_atomic_t volatile subthread_tsd=73;
-    int res;
+    sig_atomic_t volatile subthread_tsd = MAGIC_INIT;
+    void *vres;
+    int ires;
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1 };
 
     tsd = 0;
     write(1, "[pre-create]", sizeof("[pre-create]")-1);
+
     error_wrap(pthread_create(&subthread, NULL, test_tsd_subthread,
                               (void*) &subthread_tsd),
                "pthread_create", DIRECT);
     write(1, "[pre-join]", sizeof("[pre-join]")-1);
-    error_wrap(pthread_join(subthread, (void**) &res),
+    error_wrap(pthread_join(subthread, &vres),
                "pthread_join", DIRECT);
     write(1, "[post-join]", sizeof("[post-join]")-1);
-    if (res != 0) {
+    if (vres != 0) {
         printf("(subthread failed) ");
         return 1;
     }
-    if (subthread_tsd != 42 /* set by destructor */) {
+    if (subthread_tsd != MAGIC_DESTRUCTOR) {
         printf("(destructor didn't run; subthread_tsd=*%p=%d tsd=*%p=%d) ",
                &subthread_tsd, subthread_tsd, &tsd, tsd);
         return 1;
@@ -228,14 +240,19 @@ test_tsd(void)
 
     /* Subthread's flag shouldn't be honored here. */
     write(1, "[pre-nanosleep]", sizeof("[pre-nanosleep]")-1);
-    res = sigsafe_nanosleep(&ts, NULL);
-    if (res != 0) {
+    ires = sigsafe_nanosleep(&ts, NULL);
+    if (ires != 0) {
         printf("(sigsafe_nanosleep failed) ");
         return 1;
     }
 
     return 0;
 }
+#undef MAGIC_INIT
+#undef MAGIC_BEFORESIG
+#undef MAGIC_SIG
+#undef MAGIC_AFTERSIG
+#undef MAGIC_DESTRUCTOR
 #endif
 
 /* Tests that sigsafe_read() works. */
@@ -284,10 +301,12 @@ struct test {
     int (*func)(void);
 } tests[] = {
 #define DECLARE(name) { #name, name }
+#if 0
     DECLARE(test_received_flag),
     DECLARE(test_pause), /* 0-argument */
     DECLARE(test_read),  /* 3-argument */
     DECLARE(test_userhandler),
+#endif
 #ifdef _THREAD_SAFE
     DECLARE(test_tsd),
 #endif
