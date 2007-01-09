@@ -301,12 +301,10 @@ struct test {
     int (*func)(void);
 } tests[] = {
 #define DECLARE(name) { #name, name }
-#if 0
     DECLARE(test_received_flag),
     DECLARE(test_pause), /* 0-argument */
     DECLARE(test_read),  /* 3-argument */
     DECLARE(test_userhandler),
-#endif
 #ifdef _THREAD_SAFE
     DECLARE(test_tsd),
 #endif
