@@ -28,7 +28,9 @@
 #include <stdio.h>
 #include <time.h>
 
-int error_wrap(int retval, const char *funcname) {
+int
+error_wrap(int retval, const char *funcname)
+{
     if (retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -39,9 +41,15 @@ int error_wrap(int retval, const char *funcname) {
 
 volatile sig_atomic_t sigalrm_received;
 
-void note_sigalrm (int signum) { sigalrm_received = 1; }
+void
+note_sigalrm(int signum)
+{
+    sigalrm_received = 1;
+}
 
-int main(void) {
+int
+main(void)
+{
     sigset_t alrm_set, pending_set;
     struct timespec ts;
     int retval;

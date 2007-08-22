@@ -23,7 +23,9 @@
 
 struct received_signal { int signum; received_signal(int s) : signum(s) {} };
 
-int error_wrap(int retval, const char *funcname) {
+int
+error_wrap(int retval, const char *funcname)
+{
     if (retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -32,7 +34,9 @@ int error_wrap(int retval, const char *funcname) {
     return retval;
 }
 
-void throwsigaction(int signum, siginfo_t *info, void *ctx) {
+void
+throwsigaction(int signum, siginfo_t *info, void *ctx)
+{
     /*
      * We can get away with a printf() because we know exactly when this code
      * is invoked. Synchronous signals are easier.
@@ -48,7 +52,9 @@ void throwsigaction(int signum, siginfo_t *info, void *ctx) {
     }*/
 }
 
-int main() {
+int
+main(int, char**)
+{
     struct sigaction sa;
     char c, *cp = NULL;
 

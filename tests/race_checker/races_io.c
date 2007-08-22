@@ -25,7 +25,9 @@ enum pipe_half {
     WRITE
 };
 
-void* create_pipe(void) {
+void*
+create_pipe(void)
+{
     void *test_data = NULL;
 
     test_data = malloc(sizeof(int)*2);
@@ -34,7 +36,9 @@ void* create_pipe(void) {
     return test_data;
 }
 
-void cleanup_pipe(void *test_data) {
+void
+cleanup_pipe(void *test_data)
+{
     int *mypipe = (int*) test_data;
     error_wrap(close(mypipe[READ]), "close", ERRNO);
     error_wrap(close(mypipe[WRITE]), "close", ERRNO);
@@ -42,7 +46,9 @@ void cleanup_pipe(void *test_data) {
 }
 
 #ifdef SIGSAFE_HAVE_SELECT
-void do_sigsafe_select_read_child_setup(void *test_data) {
+void
+do_sigsafe_select_read_child_setup(void *test_data)
+{
     int *mypipe = (int*) test_data;
     int flags;
 
@@ -54,7 +60,9 @@ void do_sigsafe_select_read_child_setup(void *test_data) {
 }
 #endif
 
-enum run_result do_sigsafe_read(void *test_data) {
+enum run_result
+do_sigsafe_read(void *test_data)
+{
     char c;
     int *mypipe = (int*) test_data;
     int retval;
@@ -70,7 +78,9 @@ enum run_result do_sigsafe_read(void *test_data) {
 }
 
 #ifdef SIGSAFE_HAVE_SELECT
-enum run_result do_sigsafe_select_read(void *test_data) {
+enum run_result
+do_sigsafe_select_read(void *test_data)
+{
     fd_set readset;
     char c;
     int *mypipe = (int*) test_data;
@@ -97,7 +107,9 @@ enum run_result do_sigsafe_select_read(void *test_data) {
 }
 #endif
 
-enum run_result do_racebefore_read(void *test_data) {
+enum run_result
+do_racebefore_read(void *test_data)
+{
     char c;
     int *mypipe = (int*) test_data;
     int retval;
@@ -115,7 +127,9 @@ enum run_result do_racebefore_read(void *test_data) {
     }
 }
 
-enum run_result do_raceafter_read(void *test_data) {
+enum run_result
+do_raceafter_read(void *test_data)
+{
     char c;
     int *mypipe = (int*) test_data;
     int retval;
@@ -135,7 +149,9 @@ enum run_result do_raceafter_read(void *test_data) {
     }
 }
 
-void nudge_read(void *test_data) {
+void
+nudge_read(void *test_data)
+{
     char c = 26;
     int *mypipe = (int*) test_data;
     int retval;

@@ -24,11 +24,15 @@ sigsafe_send(int s, const void *buf, size_t len, int flags)
     return sendto(s, buf, len, flags, NULL, 0);
 }
 
-pid_t sigsafe_wait(int *status) {
+pid_t
+sigsafe_wait(int *status)
+{
     return sigsafe_wait4(WAIT_ANY, status, 0, NULL);
 }
 
-pid_t sigsafe_wait3(int *status, int options, struct rusage *rusage) {
+pid_t
+sigsafe_wait3(int *status, int options, struct rusage *rusage)
+{
     return sigsafe_wait4(WAIT_ANY, status, options, rusage);
 }
 

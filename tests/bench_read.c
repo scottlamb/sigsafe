@@ -42,7 +42,9 @@
 #define MYREAD read
 #endif
 
-int main(void) {
+int
+main(void)
+{
     int devzero;
     char buffer[PIPE_BUF];
 #ifdef DO_SETJMP

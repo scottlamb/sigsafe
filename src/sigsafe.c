@@ -44,11 +44,13 @@ INTERNAL_DEF struct sigsafe_syscall_ sigsafe_syscalls_[] = {
 #undef SYSCALL
 #undef MACH_SYSCALL
 
+static void
 #ifdef SIGSAFE_NO_SIGINFO
-static void sighandler(int signum, int code, struct sigcontext *ctx) {
+sighandler(int signum, int code, struct sigcontext *ctx) {
 #else
-static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
+sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx)
 #endif
+{
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd_ *sigsafe_data_ = pthread_getspecific(sigsafe_key_);
 #endif
@@ -72,7 +74,9 @@ static void sighandler(int signum, siginfo_t *siginfo, ucontext_t *ctx) {
 }
 
 #ifdef _THREAD_SAFE
-static void tsd_destructor(void* tsd_v) {
+static void
+tsd_destructor(void* tsd_v)
+{
     struct sigsafe_tsd_ *sigsafe_data_ = (struct sigsafe_tsd_*) tsd_v;
     if (sigsafe_data_->destructor != NULL) {
         sigsafe_data_->destructor(sigsafe_data_->user_data);
@@ -81,7 +85,9 @@ static void tsd_destructor(void* tsd_v) {
 }
 #endif
 
-static void sigsafe_init(void) {
+static void
+sigsafe_init(void)
+{
     /* "volatile" so our seemingly-useless references aren't optimized away. */
     void * volatile fp;
 
@@ -104,7 +110,9 @@ static void sigsafe_init(void) {
     fp = &write;
 }
 
-static void sigsafe_ensure_init(void) {
+static void
+sigsafe_ensure_init(void)
+{
 #ifdef _THREAD_SAFE
     pthread_once(&sigsafe_once, &sigsafe_init);
 #else
@@ -115,7 +123,9 @@ static void sigsafe_ensure_init(void) {
 #endif
 }
 
-int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
+int
+sigsafe_install_handler(int signum, sigsafe_user_handler_t handler)
+{
     struct sigaction sa;
 
     assert(0 < signum && signum <= SIGSAFE_SIGMAX);
@@ -140,8 +150,9 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     return 0;
 }
 
-int sigsafe_install_tsd(intptr_t user_data,
-                               void (*destructor)(intptr_t)) {
+int
+sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t))
+{
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd_ *sigsafe_data_ = NULL;
     int retval;
@@ -172,7 +183,9 @@ int sigsafe_install_tsd(intptr_t user_data,
     return 0;
 }
 
-intptr_t sigsafe_clear_received(void) {
+intptr_t
+sigsafe_clear_received(void)
+{
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd_ *sigsafe_data_;
 

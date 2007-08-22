@@ -18,7 +18,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-int error_wrap(int retval, const char *funcname) {
+int
+error_wrap(int retval, const char *funcname)
+{
     if (retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -29,10 +31,21 @@ int error_wrap(int retval, const char *funcname) {
 
 volatile sig_atomic_t sigusr1_received, sigalrm_received;
 
-void sigusr1_handler(int signum) { sigusr1_received = 1; }
-void sigalrm_handler(int signum) { sigalrm_received = 1; }
+void
+sigusr1_handler(int signum)
+{
+    sigusr1_received = 1;
+}
 
-int main(void) {
+void
+sigalrm_handler(int signum)
+{
+    sigalrm_received = 1;
+}
+
+int
+main(void)
+{
     sigset_t empty;
     struct sigaction sa;
     sigset_t pending;

@@ -28,7 +28,9 @@ INTERNAL_DEC kern_return_t sigsafe_clock_sleep_trap(
         mach_timespec_t         *abs_time_after);
 
 /* Derived from Libc/gen/nanosleep.c */
-int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
+int
+sigsafe_nanosleep(const struct timespec *req, struct timespec *rem)
+{
     kern_return_t ret;
     mach_timespec_t abs_time_after;
     mach_timespec_t abs_time_before;
@@ -65,7 +67,9 @@ int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
 
 INTERNAL_DEC int sigsafe_sigsuspend_(const sigset_t mask);
 
-int sigsafe_sigsuspend(const sigset_t *mask_p) {
+int
+sigsafe_sigsuspend(const sigset_t *mask_p)
+{
     sigset_t mask;
 
     if (mask_p)
@@ -76,24 +80,34 @@ int sigsafe_sigsuspend(const sigset_t *mask_p) {
     return sigsafe_sigsuspend_(mask);
 }
 
-int sigsafe_pause(void) {
+int
+sigsafe_pause(void)
+{
     sigset_t mask;
     sigemptyset(&mask);
     return sigsafe_sigsuspend_(mask);
 }
 
-ssize_t sigsafe_recv(int s, void *buf, size_t len, int flags) {
+ssize_t
+sigsafe_recv(int s, void *buf, size_t len, int flags)
+{
     return sigsafe_recvfrom(s, buf, len, flags, NULL, 0);
 }
 
-ssize_t sigsafe_send(int s, const void *buf, size_t len, int flags) {
+ssize_t
+sigsafe_send(int s, const void *buf, size_t len, int flags)
+{
     return sigsafe_sendto(s, buf, len, flags, NULL, 0);
 }
 
-pid_t sigsafe_wait(int *status) {
+pid_t
+sigsafe_wait(int *status)
+{
     return sigsafe_wait4(WAIT_ANY, status, 0, NULL);
 }
 
-pid_t sigsafe_wait3(int *status, int options, struct rusage *rusage) {
+pid_t
+sigsafe_wait3(int *status, int options, struct rusage *rusage)
+{
     return sigsafe_wait4(WAIT_ANY, status, options, rusage);
 }

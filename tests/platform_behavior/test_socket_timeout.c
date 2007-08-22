@@ -27,7 +27,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-int error_wrap(int retval, const char *funcname) {
+int
+error_wrap(int retval, const char *funcname)
+{
     if (retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -36,12 +38,16 @@ int error_wrap(int retval, const char *funcname) {
     return retval;
 }
 
-double doublify_timeval(const struct timeval *tv) {
+double
+doublify_timeval(const struct timeval *tv)
+{
     assert(tv != NULL);
     return tv->tv_sec + ((double) tv->tv_usec / 1000000.);
 }
 
-int main(void) {
+int
+main(void)
+{
     struct sockaddr_in server_addr;
     socklen_t server_addr_len = sizeof(struct sockaddr_in);
     int listen_fd, connected_fd;

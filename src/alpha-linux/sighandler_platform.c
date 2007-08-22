@@ -12,7 +12,8 @@
 #include <unistd.h>
 
 HIDDEN_DEC void
-sigsafe_handler_for_platform_(ucontext_t *ctx) {
+sigsafe_handler_for_platform_(ucontext_t *ctx)
+{
     struct sigsafe_syscall_ *s;
     void *pc;
     pc = (void*) ctx->uc_mcontext.sc_pc;

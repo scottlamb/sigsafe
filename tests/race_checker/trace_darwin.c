@@ -30,7 +30,9 @@
  * <http://www.omnigroup.com/mailman/archive/macosx-dev/2000-June/002030.html>
  */
 
-void mach_error_wrap(kern_return_t krc, const char *name) {
+void
+mach_error_wrap(kern_return_t krc, const char *name)
+{
     if (krc != KERN_SUCCESS) {
         fprintf(stderr, "%s returned %d (%s)\n",
                 name, krc, mach_error_string(krc));
@@ -42,7 +44,9 @@ void mach_error_wrap(kern_return_t krc, const char *name) {
  * Returns a Mach thread for a process.
  * It is the caller's responsibility to free it.
  */
-void thread_for_pid(pid_t pid, thread_t *thread) {
+void
+thread_for_pid(pid_t pid, thread_t *thread)
+{
     task_t task;
     thread_t *thread_list;
     mach_msg_type_number_t thread_count;
@@ -60,9 +64,15 @@ void thread_for_pid(pid_t pid, thread_t *thread) {
                     "mach_port_deallocate");
 }
 
-void trace_me(void) {}
+void
+trace_me(void)
+{
+}
 
-void trace_attach(pid_t pid) {
+
+void
+trace_attach(pid_t pid)
+{
     thread_t thread;
     thread_for_pid(pid, &thread);
     mach_error_wrap(thread_suspend(thread), "thread_suspend");
@@ -72,7 +82,9 @@ void trace_attach(pid_t pid) {
     printf("attached\n");
 }
 
-void trace_step(pid_t pid, int signum) {
+void
+trace_step(pid_t pid, int signum)
+{
     thread_t thread;
     struct ppc_thread_state state;
     int state_count = PPC_THREAD_STATE_COUNT;
@@ -105,7 +117,9 @@ void trace_step(pid_t pid, int signum) {
  * Stupid Mach.
  */
 
-void trace_continue(pid_t pid, int signum) {
+void
+trace_continue(pid_t pid, int signum)
+{
     fprintf(stderr, "trace_continue: Wow, you got it to get this far?");
     abort();
     /*errno = 0;

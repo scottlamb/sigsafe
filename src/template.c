@@ -1,4 +1,4 @@
-/** @file 
+/** @file
  * A template for making assembly.
  * This file should never be used. Instead, it's helpful as a template
  * for writing assembly for new platforms. Compile it with -S and look at the
@@ -20,7 +20,8 @@ INTERNAL_DEF pthread_key_t sigsafe_key_;
 INTERNAL_DEF struct sigsafe_tsd_ *sigsafe_data_;
 #endif
 
-ssize_t sigsafe_read_template(int fd, char *buf, size_t len) {
+ssize_t
+sigsafe_read_template(int fd, char *buf, size_t len) {
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd_ *sigsafe_data_ = pthread_getspecific(sigsafe_key_);
 #endif
@@ -31,8 +32,7 @@ ssize_t sigsafe_read_template(int fd, char *buf, size_t len) {
 }
 
 int
-main(int argc, char **argv)
-{
+main(int argc, char **argv) {
     char buf[256];
 
     return sigsafe_read_template(0, buf, sizeof(buf));

@@ -44,7 +44,9 @@
 
 int quick_mode;
 
-int error_wrap(int retval, const char *funcname, enum error_return_type type) {
+int
+error_wrap(int retval, const char *funcname, enum error_return_type type)
+{
     if (type == ERRNO && retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -196,7 +198,9 @@ sigset_t chld_alrm_set;
  * As this is only called during sigsuspend, it can safely access data
  * structures other than <tt>volatile sig_atomic_t</tt> ones.
  */
-void wait_for_sigchld_helper(int signum, siginfo_t *info, void *ctx) {
+void
+wait_for_sigchld_helper(int signum, siginfo_t *info, void *ctx)
+{
     if (wait_for_sigchld_event != EVENT_NONE) {
         abort();
     }
@@ -211,7 +215,9 @@ void wait_for_sigchld_helper(int signum, siginfo_t *info, void *ctx) {
     }
 }
 
-void setup_for_wait_for_sigchld(void) {
+void
+setup_for_wait_for_sigchld(void)
+{
     struct sigaction sa;
 
     /* Block SIGCHLD and SIGALRM for most of our program's execution. */
@@ -246,7 +252,9 @@ void setup_for_wait_for_sigchld(void) {
  * @return <tt>EVENT_SIGCHLD</tt> or <tt>EVENT_TIMEOUT</tt>, whichever
  *         occurred first.
  */
-enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
+enum event
+wait_for_sigchld(siginfo_t *info, const struct timeval *timeout)
+{
     sigset_t no_signals;
     struct itimerval it;
 
@@ -266,7 +274,7 @@ enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
     wait_for_sigchld_info = info;
     sigsuspend(&no_signals);
     wait_for_sigchld_info = NULL;
-    
+
     if (wait_for_sigchld_event == EVENT_TIMEOUT) {
         wait_for_sigchld_event = EVENT_NONE;
         return EVENT_TIMEOUT;
@@ -313,7 +321,9 @@ enum event wait_for_sigchld(siginfo_t *info, const struct timeval *timeout) {
  * Takes care of getting rid of a child that has timed out and making sure
  * the signal has arrived.
  */
-void smite_child(pid_t childpid) {
+void
+smite_child(pid_t childpid)
+{
     siginfo_t info;
     int retval;
 
@@ -331,7 +341,9 @@ void smite_child(pid_t childpid) {
  * Runs the test for a given function.
  * @bug There is some <i>ugly</i> code in here.
  */
-enum test_result run_test(const struct test *t) {
+enum test_result
+run_test(const struct test *t)
+{
     void *test_data = NULL;
     struct timeval timeout;
     pid_t childpid;
@@ -498,7 +510,9 @@ enum test_result run_test(const struct test *t) {
 }
 
 /** Prints a usage message to stdout. */
-void help(void) {
+void
+help(void)
+{
     printf("race_checker - exhaustively search for race conditions in signal code.\n\n");
     printf("Usage:\n\n");
 
@@ -521,7 +535,9 @@ void help(void) {
     printf("system call instruction (where most interesting races happen).\n");
 }
 
-void list_tests(void) {
+void
+list_tests(void)
+{
     int i;
 
     printf("  %-20s Expected result\n", "Test name");
@@ -538,7 +554,9 @@ void list_tests(void) {
     printf("\n* - slow test - not included in the 'most tests' set\n");
 }
 
-int main(int argc, char **argv) {
+int
+main(int argc, char **argv)
+{
     int i, run_all = 0, run_most = 0, run_specific = 0, unexpected = 0;
 
     setup_for_wait_for_sigchld();

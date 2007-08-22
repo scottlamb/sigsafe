@@ -20,7 +20,9 @@ enum error_return_type {
     ERRNO           /**< old-school functions */
 };
 
-int error_wrap(int retval, const char *funcname, enum error_return_type type) {
+int
+error_wrap(int retval, const char *funcname, enum error_return_type type)
+{
     if (type == ERRNO && retval < 0) {
         fprintf(stderr, "%s returned %d (errno==%d) (%s)\n",
                 funcname, retval, errno, strerror(errno));
@@ -37,8 +39,9 @@ int error_wrap(int retval, const char *funcname, enum error_return_type type) {
     return retval;
 }
 
-
-int main(void) {
+int
+main(void)
+{
     char buf[42];
     int retval;
 

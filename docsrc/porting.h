@@ -16,12 +16,12 @@
  *   values (inclusive), the signal handler will work by jumping to
  *   _sigsafe_XXX_jmpto. (It should not be in that region.) Look at the other
  *   platforms for examples.
- * 
+ *
  * - the signal handler. It should adjust the instruction pointer inside the
  *   context argument as mentioned above. Then return to userspace. On all the
  *   previous platforms, just modifying the context and returning normally is
  *   sufficient. You might find instead:
- * 
+ *
  *   - you need to use setcontext()
  *   - you need to use sigreturn()
  *   - you need to save a jump buffer in your system call wrappers with
@@ -75,11 +75,11 @@
 @verbatim
 $ tests/build-myplatform/race_checker -qm
 ...
-  Test                 Result               Expected            
+  Test                 Result               Expected
 ----------------------------------------------------------------
-  sigsafe_read         success              success             
-  racebefore_read      ignored signal       ignored signal      
-  raceafter_read       forgotten result     forgotten result    
+  sigsafe_read         success              success
+  racebefore_read      ignored signal       ignored signal
+  raceafter_read       forgotten result     forgotten result
 @endverbatim
  *
  * If the the results are different from expected, it will mark the guilty

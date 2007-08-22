@@ -17,7 +17,8 @@
 
 #define mysizeof(x) ((unsigned long) sizeof(x))
 
-int main(void) {
+int
+main(void) {
     printf("sizeof(sigset_t) == %lu\n", mysizeof(sigset_t));
 #ifdef _THREAD_SAFE
     printf("sizeof(pthread_key_t) == %lu\n", mysizeof(pthread_key_t));

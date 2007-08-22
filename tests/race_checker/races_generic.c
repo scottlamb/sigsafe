@@ -15,7 +15,9 @@ volatile sig_atomic_t signal_received;
 volatile sig_atomic_t jump_is_safe;
 sigjmp_buf env;
 
-static void note_signal(int signo) {
+static void
+note_signal(int signo)
+{
     signal_received++;
     if (jump_is_safe) {
         siglongjmp(env, 1);
@@ -23,12 +25,16 @@ static void note_signal(int signo) {
     }
 }
 
-void install_safe(void *test_data) {
+void
+install_safe(void *test_data)
+{
     error_wrap(sigsafe_install_handler(SIGUSR1, NULL), "sigsafe_install_handler", ERRNO);
     error_wrap(sigsafe_install_tsd(0, NULL), "sigsafe_install_tsd", ERRNO);
 }
 
-void install_unsafe(void *test_data) {
+void
+install_unsafe(void *test_data)
+{
     struct sigaction sa;
     sa.sa_handler = &note_signal;
     sigemptyset(&sa.sa_mask);
@@ -36,7 +42,9 @@ void install_unsafe(void *test_data) {
     error_wrap(sigaction(SIGUSR1, &sa, NULL), "sigaction", ERRNO);
 }
 
-enum run_result do_install_safe(void *test_data) {
+enum run_result
+do_install_safe(void *test_data)
+{
     install_safe(test_data);
     return NORMAL;
 }
