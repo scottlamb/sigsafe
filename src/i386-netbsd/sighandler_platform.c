@@ -11,7 +11,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-void sigsafe_handler_for_platform_(struct sigcontext *ctx) {
+HIDDEN_DEF void
+sigsafe_handler_for_platform_(struct sigcontext *ctx) {
     struct sigsafe_syscall_ *s;
     void *eip;
     eip = (void*) ctx->sc_eip;

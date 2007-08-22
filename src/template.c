@@ -14,12 +14,10 @@
 #include <pthread.h>
 #include "sigsafe_internal.h"
 
-#undef PRIVATE_DEF
-#define PRIVATE_DEF(x) x
 #ifdef _THREAD_SAFE
-PRIVATE_DEF(pthread_key_t sigsafe_key_);
+INTERNAL_DEF pthread_key_t sigsafe_key_;
 #else
-PRIVATE_DEF(struct sigsafe_tsd_ *sigsafe_data_);
+INTERNAL_DEF struct sigsafe_tsd_ *sigsafe_data_;
 #endif
 
 ssize_t sigsafe_read_template(int fd, char *buf, size_t len) {

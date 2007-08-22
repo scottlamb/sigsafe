@@ -16,19 +16,19 @@
 #include <errno.h>
 
 #ifdef _THREAD_SAFE
-PRIVATE_DEC(pthread_key_t sigsafe_key_) = 0;
+INTERNAL_DEF pthread_key_t sigsafe_key_ = 0;
 static pthread_once_t sigsafe_once = PTHREAD_ONCE_INIT;
 #else
-PRIVATE_DEC(struct sigsafe_tsd_* sigsafe_data_) = 0;
+INTERNAL_DEF struct sigsafe_tsd_* sigsafe_data_ = 0;
 static int sigsafe_inited;
 #endif
 
 static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
 
 #define SYSCALL(name, args) \
-        PRIVATE_DEF(void sigsafe_##name##_minjmp_(void)); \
-        PRIVATE_DEF(void sigsafe_##name##_maxjmp_(void)); \
-        PRIVATE_DEF(void sigsafe_##name##_jmpto_ (void));
+        INTERNAL_DEC void sigsafe_##name##_minjmp_(void); \
+        INTERNAL_DEC void sigsafe_##name##_maxjmp_(void); \
+        INTERNAL_DEC void sigsafe_##name##_jmpto_ (void);
 #define MACH_SYSCALL(name, args) SYSCALL(name, args)
 #include "syscalls.h"
 #undef SYSCALL
@@ -37,7 +37,7 @@ static sigsafe_user_handler_t user_handlers[SIGSAFE_SIGMAX];
         { sigsafe_##name##_minjmp_, \
           sigsafe_##name##_maxjmp_, \
           sigsafe_##name##_jmpto_ },
-PRIVATE_DEC(struct sigsafe_syscall_ sigsafe_syscalls_[]) = {
+INTERNAL_DEF struct sigsafe_syscall_ sigsafe_syscalls_[] = {
 #include "syscalls.h"
     { NULL, NULL, NULL }
 };
@@ -140,7 +140,8 @@ int sigsafe_install_handler(int signum, sigsafe_user_handler_t handler) {
     return 0;
 }
 
-int sigsafe_install_tsd(intptr_t user_data, void (*destructor)(intptr_t)) {
+int sigsafe_install_tsd(intptr_t user_data,
+                               void (*destructor)(intptr_t)) {
 #ifdef _THREAD_SAFE
     struct sigsafe_tsd_ *sigsafe_data_ = NULL;
     int retval;

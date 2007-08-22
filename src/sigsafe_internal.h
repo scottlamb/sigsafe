@@ -20,13 +20,21 @@
  */
 
 #if defined(__APPLE_CC__)
-#define PRIVATE_DEF(sym) __private_extern__ sym
-#define PRIVATE_DEC(sym) __private_extern__ sym
+#define HIDDEN_DEC __private_extern__
+#define HIDDEN_DEF __private_extern__
+#define INTERNAL_DEC __private_extern__
+#define INTERNAL_DEF __private_extern__
 #elif defined(__GNUC__)
-#define PRIVATE_DEF(sym) extern __attribute__ ((visibility ("internal"))) sym
-#define PRIVATE_DEC(sym) __attribute__ ((visibility ("internal"))) sym
+#define HIDDEN_DEC   extern __attribute__ ((visibility ("hidden")))
+#define HIDDEN_DEF          __attribute__ ((visibility ("hidden")))
+#define INTERNAL_DEC extern __attribute__ ((visibility ("internal")))
+#define INTERNAL_DEF        __attribute__ ((visibility ("internal")))
 #else
-#error "Don't know how to make symbols private on your platform."
+#warn "Don't know how to make symbols private on your platform."
+#define HIDDEN_DEC
+#define HIDDEN_DEF
+#define INTERNAL_DEC
+#define INTERNAL_DEF
 #endif
 
 /**
@@ -59,12 +67,12 @@ struct sigsafe_syscall_ {
     void* const jmpto;
 };
 
-PRIVATE_DEF(struct sigsafe_syscall_ sigsafe_syscalls_[]);
+INTERNAL_DEC struct sigsafe_syscall_ sigsafe_syscalls_[];
 
 #ifdef SIGSAFE_NO_SIGINFO
-PRIVATE_DEF(void sigsafe_handler_for_platform_(struct sigcontext *ctx));
+HIDDEN_DEC void sigsafe_handler_for_platform_(struct sigcontext *ctx);
 #else
-PRIVATE_DEF(void sigsafe_handler_for_platform_(ucontext_t *ctx));
+HIDDEN_DEC void sigsafe_handler_for_platform_(ucontext_t *ctx);
 #endif
 
 #endif /* !SIGSAFE_INTERNAL_H */

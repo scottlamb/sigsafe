@@ -20,12 +20,12 @@
 
 extern mach_port_t clock_port; /* see Libc/mach/mach_init_ports.c */
 
-PRIVATE_DEF(kern_return_t sigsafe_clock_sleep_trap(
+INTERNAL_DEC kern_return_t sigsafe_clock_sleep_trap(
         mach_port_name_t        clock_name,
         sleep_type_t            sleep_type,
         int                     sleep_sec,
         int                     sleep_nsec,
-        mach_timespec_t         *abs_time_after));
+        mach_timespec_t         *abs_time_after);
 
 /* Derived from Libc/gen/nanosleep.c */
 int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
@@ -63,7 +63,7 @@ int sigsafe_nanosleep(const struct timespec *req, struct timespec *rem) {
     return (ret == KERN_SUCCESS) ? 0 : -EINVAL;
 }
 
-PRIVATE_DEF(int sigsafe_sigsuspend_(const sigset_t mask));
+INTERNAL_DEC int sigsafe_sigsuspend_(const sigset_t mask);
 
 int sigsafe_sigsuspend(const sigset_t *mask_p) {
     sigset_t mask;

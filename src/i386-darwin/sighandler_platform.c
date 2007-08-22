@@ -11,7 +11,8 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-PRIVATE_DEF(void sigsafe_handler_for_platform_(ucontext_t *ctx)) {
+HIDDEN_DEF void
+sigsafe_handler_for_platform_(ucontext_t *ctx) {
     struct sigsafe_syscall_ *s;
     void *srr0;
     srr0 = (void*) ctx->uc_mcontext->ss.eip;
