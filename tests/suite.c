@@ -157,7 +157,6 @@ test_tsd_usr1(int signo, siginfo_t *si, ucontext_t *ctx, intptr_t user_data)
 {
     sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) user_data;
 
-    write(1, "[userhandler]", sizeof("[userhandler]")-1);
     if (*subthread_tsd != MAGIC_BEFORESIG) {
         abort();
     }
@@ -173,8 +172,6 @@ subthread_tsd_destructor(intptr_t tsd)
         abort();
     }
     *subthread_tsd = MAGIC_DESTRUCTOR;
-    printf("[destructed %p]", subthread_tsd);
-    fflush(stdout);
 }
 
 static void*
@@ -182,8 +179,6 @@ test_tsd_subthread(void *arg)
 {
     sig_atomic_t volatile *subthread_tsd = (sig_atomic_t volatile *) arg;
 
-    printf("[pre-install %p]", subthread_tsd);
-    fflush(stdout);
     error_wrap(sigsafe_install_tsd((intptr_t) subthread_tsd,
                                    subthread_tsd_destructor),
                "sigsafe_install_tsd", NEGATIVE);
@@ -194,7 +189,6 @@ test_tsd_subthread(void *arg)
     *subthread_tsd = MAGIC_BEFORESIG;
     error_wrap(sigsafe_install_handler(SIGUSR1, test_tsd_usr1),
                "sigsafe_install_handler", NEGATIVE);
-    write(1, "[pre-kill]", sizeof("[pre-kill]")-1);
     pthread_kill(pthread_self(), SIGUSR1);
     /*
      * Note: never clearing received.
@@ -205,7 +199,6 @@ test_tsd_subthread(void *arg)
     }
     *subthread_tsd = MAGIC_AFTERSIG;
 
-    write(1, "[returning]", sizeof("[returning]")-1);
     return (void*) 0;
 }
 
@@ -219,15 +212,12 @@ test_tsd(void)
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1 };
 
     tsd = 0;
-    write(1, "[pre-create]", sizeof("[pre-create]")-1);
 
     error_wrap(pthread_create(&subthread, NULL, test_tsd_subthread,
                               (void*) &subthread_tsd),
                "pthread_create", DIRECT);
-    write(1, "[pre-join]", sizeof("[pre-join]")-1);
     error_wrap(pthread_join(subthread, &vres),
                "pthread_join", DIRECT);
-    write(1, "[post-join]", sizeof("[post-join]")-1);
     if (vres != 0) {
         printf("(subthread failed) ");
         return 1;
@@ -239,7 +229,6 @@ test_tsd(void)
     }
 
     /* Subthread's flag shouldn't be honored here. */
-    write(1, "[pre-nanosleep]", sizeof("[pre-nanosleep]")-1);
     ires = sigsafe_nanosleep(&ts, NULL);
     if (ires != 0) {
         printf("(sigsafe_nanosleep failed) ");
