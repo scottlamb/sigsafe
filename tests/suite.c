@@ -115,6 +115,36 @@ test_pause(void)
     return 0;
 }
 
+/**
+ * Tests that sigsafe_nanosleep() works in most basic case.
+ * On OS X, this is implemented with a Mach system call and wrapper, so it is
+ * significantly different from other sigsafe syscalls.
+ */
+int test_nanosleep(void) {
+#define REQUESTED_US 1000
+#define ALLOWED_EXTRA_US 10000 /* generous to avoid failures when CPU busy */
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000*REQUESTED_US };
+    struct timeval before, after;
+    int actual_us;
+    int rv;
+
+    gettimeofday(&before, NULL);
+    rv = sigsafe_nanosleep(&ts, &ts);
+    if (rv != 0) {
+        abort();
+    }
+    gettimeofday(&after, NULL);
+    actual_us =   (after.tv_sec - before.tv_sec)*1000000
+                + (after.tv_usec - before.tv_usec);
+    if (actual_us < REQUESTED_US
+        || actual_us > REQUESTED_US + ALLOWED_EXTRA_US) {
+        abort();
+    }
+    return 0;
+#undef REQUESTED_US
+#undef ALLOWED_EXTRA_US
+}
+
 void
 test_userhandler_handler(int signo, siginfo_t *si, ucontext_t *ctx,
                          intptr_t user_data)
@@ -143,7 +173,6 @@ test_userhandler(void)
 
     return 0;
 }
-
 
 #ifdef _THREAD_SAFE
 #define MAGIC_INIT          73
@@ -292,6 +321,7 @@ struct test {
 #define DECLARE(name) { #name, name }
     DECLARE(test_received_flag),
     DECLARE(test_pause), /* 0-argument */
+    DECLARE(test_nanosleep),
     DECLARE(test_read),  /* 3-argument */
     DECLARE(test_userhandler),
 #ifdef _THREAD_SAFE
